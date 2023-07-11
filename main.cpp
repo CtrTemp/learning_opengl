@@ -8,6 +8,14 @@
 #include "shaders/shaders.h"
 #include "textures/gl_textures.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+// settings
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
 // 顶点对应的归一化纹理坐标
 // OpenGL下左下角是[0,0]，右上角是 [1,1]
 float textCoord[] = {
@@ -17,14 +25,71 @@ float textCoord[] = {
     0.0f, 1.0f, // top left
 };
 
-// 将以上纹理的坐标值添加到顶点附加属性，作为顶点参数的一部分
-// 顶点
+// // 将以上纹理的坐标值添加到顶点附加属性，作为顶点参数的一部分
+// // 顶点
+// float vertices[] = {
+//     0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // top right
+//     0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // bottom right
+//     -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
+//     -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f   // top left
+// };
+
 float vertices[] = {
-    0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // top right
-    0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
-    -0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f   // top left
-};
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+    0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+    0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+
+    -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+    -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+
+    0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+
+    -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
+    0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
+    0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
+    -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
+    -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f};
+
+// 我们可以绘制更多的CUBE
+
+glm::vec3 cubePositions[] = {
+    glm::vec3(0.0f, 0.0f, 0.0f),
+    glm::vec3(2.0f, 5.0f, -15.0f),
+    glm::vec3(-1.5f, -2.2f, -2.5f),
+    glm::vec3(-3.8f, -2.0f, -12.3f),
+    glm::vec3(2.4f, -0.4f, -3.5f),
+    glm::vec3(-1.7f, 3.0f, -7.5f),
+    glm::vec3(1.3f, -2.0f, -2.5f),
+    glm::vec3(1.5f, 2.0f, -2.5f),
+    glm::vec3(1.5f, 0.2f, -1.5f),
+    glm::vec3(-1.3f, 1.0f, -1.5f)};
 
 // 顶点顺序索引
 unsigned int indices[] = {
@@ -133,6 +198,18 @@ int main()
     unsigned int ray_tracing_texture = load_textures("../textures/ray_tracing.png");
     unsigned int viking_texture = load_textures("../textures/viking_room.png");
 
+    // 以下是基本用于测试的变换阵
+    // 将 uniform buffer 导入之前一定要先将shader进行选中
+    ourShader.use();
+    // 定义并导入坐标变换阵
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0)); // 逆时针旋转90度
+    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));                       // 长宽高均缩放至原来的0.5倍
+    // 指明向哪一个shader传入这个变换矩阵
+    unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
+    // 将变换矩阵数据从 CPU 端导入到 GPU 端
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans)); // or with shader class
+
     // main render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -142,7 +219,15 @@ int main()
 
         // set clear frame color
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        // glClear(GL_COLOR_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+        // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // create transformations
+        glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        transform = glm::translate(transform, glm::vec3(0.0f, 0.0f, 0.0f));
+        transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
 
         // 选定shader
         // 将这个 shaderProgram 作为当前选中的着色器（其实就是激活，让其变为当前将要被使用的）
@@ -151,7 +236,27 @@ int main()
         ourShader.use();
         // 以下使用两种方式从CPU端告知GPU端设置的Uniform Buffer编号
         glUniform1i(glGetUniformLocation(ourShader.ID, "ourTextureFromCPU"), 0); // set it manually
-        ourShader.setInt("ourTextureFromCPU_ano", 1);                            // or with shader class
+        ourShader.setInt("ourTextureFromCPU_ano", 1);
+
+        // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+
+        // 定义 MVP 变换阵并导入shader
+        // Model
+        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
+        // 让 MVP变换后的图形 动起来
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        // model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+
+        unsigned int modelLoc = glGetUniformLocation(ourShader.ID, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        unsigned int viewLoc = glGetUniformLocation(ourShader.ID, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]); // 也可以采用这种方式传递指针
+        unsigned int projectionLoc = glGetUniformLocation(ourShader.ID, "projection");
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         // 向uniform buffer更新值（这里的值将作为fragment shader 的直接输出）
         // (根据时间更新颜色)
@@ -173,10 +278,27 @@ int main()
         glBindTexture(GL_TEXTURE_2D, viking_texture);
         // 选定特定的VAO（特定的模型/场景）
         glBindVertexArray(VAO);
+
+        // 绘制更多的 CUBE
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            // 静态 cube
+            // model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            // 动态 cube
+            model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+            unsigned int modelLoc = glGetUniformLocation(ourShader.ID, "model");
+            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
         // 执行绘制
         // // draw points 0-3 from the currently bound VAO with current in-use shader
         // glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
