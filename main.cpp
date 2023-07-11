@@ -98,17 +98,143 @@ unsigned int indices[] = {
     1, 2, 3  // second triangle
 };
 
+// 关于 Camera 的参数定义为全局变量
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 worldDown = glm::vec3(0.0f, -1.0f, 0.0f);
+
+// 帧时间计数器，定义为全局的
+float deltaTime = 0.0f; // Time between current frame and last frame
+float lastFrame = 0.0f; // Time of last frame
+
 // window resize callback
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 
-// Esc Exit
+// 键盘交互回调函数
 void processInput(GLFWwindow *window)
 {
+    // // middle speed
+    // float cameraSpeed = 2.5f * deltaTime;
+    // fast speed
+    float cameraSpeed = 5.0f * deltaTime;
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // EQ 绝对位置运动控制
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        cameraPos += cameraSpeed * worldUp;
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        cameraPos += cameraSpeed * worldDown;
+
+    // WASD 相对位置运动控制
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+
+// 鼠标交互所需的全局变量
+
+float lastX = 400, lastY = 300;
+float yaw = -90.0f;
+float fov = 45.0f;
+float pitch;
+bool firstMouse = true;
+
+// 鼠标左键按下代表当前正在拖动置为true，抬起后又置为 false
+bool isDraging = false;
+
+// 鼠标移动交互回调函数
+void mouse_callback(GLFWwindow *window, double xpos, double ypos)
+{
+    if (!isDraging)
+    {
+        return;
+    }
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = ypos - lastY;
+    lastX = xpos;
+    lastY = ypos;
+
+    float sensitivity = 0.1f;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch -= yoffset;
+
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+
+    glm::vec3 direction;
+    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.y = sin(glm::radians(pitch));
+    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cameraFront = glm::normalize(direction);
+}
+
+// 鼠标点击回调
+static void mouse_button_callback(GLFWwindow *window, int button, int action, int mods)
+{
+    if (button == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        double x;
+        double y;
+        isDraging = !isDraging;
+        // glfwGetCursorPos(window, &x, &y);
+
+        // if (previous_y_position - y > 0)
+        // {
+        //     camera_translation.y -= 1.0f;
+        //     previous_y_position = y;
+        // }
+        // else
+        // {
+        //     camera_translation.y += 1.0f;
+        //     previous_y_position = y;
+        // }
+        if (!isDraging)
+        {
+            firstMouse = true;
+        }
+
+        std::cout << "left button clicked" << std::endl;
+    }
+    else if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    {
+        std::cout << "right button clicked" << std::endl;
+    }
+}
+
+// 鼠标滚轮回调
+void scroll_callback(GLFWwindow *window, double xoffset, double yoffset)
+{
+    fov -= (float)yoffset;
+    if (fov < 1.0f)
+        fov = 1.0f;
+    if (fov > 45.0f)
+        fov = 45.0f;
 }
 
 int main()
@@ -138,7 +264,15 @@ int main()
 
     glViewport(0, 0, 800, 600);
 
+    // 注册键盘交互回调函数
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // 鼠标禁用
+    // 注册鼠标交互回调函数
+    glfwSetCursorPosCallback(window, mouse_callback);
+    // 注册鼠标滚轮交互回调
+    glfwSetScrollCallback(window, scroll_callback);
+    // 注册鼠标点击交互回调函数
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     Shader ourShader("../shaders/shader_file/v.vert", "../shaders/shader_file/f.frag");
 
@@ -210,10 +344,28 @@ int main()
     // 将变换矩阵数据从 CPU 端导入到 GPU 端
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans)); // or with shader class
 
+    // // 定义 camera 这个抽象
+    // // 相机位置（lookfrom）
+    // glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+    // // 相机看向的位置（lookat）
+    // glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+    // // 相机朝向（从lookat 指向 lookfrom，感觉这个是反过来的，，，）
+    // glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+
+    // // 定义场景  向上方向（一般取y轴正方向）
+    // glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    // // 相机右侧方向（这个是相对相机的正右侧朝向）
+    // glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection));
+    // // 获取相机的向上方向（这个也是相对于相机的向上朝向）
+    // glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+
     // main render loop
     while (!glfwWindowShouldClose(window))
     {
 
+        float currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
         // 按键断出
         processInput(window);
 
@@ -243,13 +395,27 @@ int main()
         // 定义 MVP 变换阵并导入shader
         // Model
         glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-        glm::mat4 view = glm::mat4(1.0f);
+        // glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 view;
+        // // 通过这种方式来定义一个 view matrix
+        // view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
+        //                    glm::vec3(0.0f, 0.0f, 0.0f),
+        //                    glm::vec3(0.0f, 10.0f, 0.0f));
+        // camera 自动运动
+        // const float radius = 10.0f;
+        // float camX = sin(glfwGetTime()) * radius;
+        // float camZ = cos(glfwGetTime()) * radius;
+        // view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
         glm::mat4 projection = glm::mat4(1.0f);
         // 让 MVP变换后的图形 动起来
         model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
         // model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        // view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        // projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         unsigned int modelLoc = glGetUniformLocation(ourShader.ID, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
