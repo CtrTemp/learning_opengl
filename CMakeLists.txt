@@ -8,6 +8,7 @@ set(CMAKE_BUILD_TYPE DEBUG)
 
 aux_source_directory(. SRC_LIST)#添加src目录下的所有源文件
 aux_source_directory(./src SRC_LIST)#添加src目录下的所有源文件
+aux_source_directory(./shaders SRC_LIST)#添加shaders目录下的所有源文件
 
 include_directories(./ ./include)
 
