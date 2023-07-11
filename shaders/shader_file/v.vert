@@ -20,15 +20,19 @@ OpenGL确保至少有16个4分量的顶点属性可以使用。～这个最大
 */
 // 简单来说，layout表示它是由CPU统一传输，并分割而来的数据包
 // 并使用 location 字段指明数据包各项属性的内部偏移量。
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec3 aCol;
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 color;
+layout(location = 2) in vec2 textCoord;
 
+// 当前来看对于 color 和 textCoord 直接向下传入到 fragment shader 即可
 out vec3 ourColorFromVert;
+out vec2 TexCoord;
 
 // 最终是main函数，这个函数将被每一个并行单元执行一次
 // 函数中将处理输入的变量，并将最终的计算结果赋值到输出变量
 
 void main() {
-  gl_Position = vec4(aPos, 1.0);
-  ourColorFromVert = aCol;
+  gl_Position = vec4(position, 1.0);
+  ourColorFromVert = color;
+  TexCoord = textCoord;
 }
