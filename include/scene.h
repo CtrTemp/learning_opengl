@@ -8,8 +8,8 @@
 class Scene
 {
 public:
-    // 创建场景时必须要传入其对应的shader
-    Scene(std::string vert_shader, std::string frag_shader)
+    // 一个场景可以有不止一个shader文件控制，所以不应该在构造函数中传入shader路径
+    Scene()
     {
         VAO = 0;
         VBO = 0;
@@ -18,7 +18,6 @@ public:
         model = glm::mat4(1.0f);
         view = glm::mat4(1.0f);
         projection = glm::mat4(1.0f);
-        shader = Shader(vert_shader.c_str(), frag_shader.c_str());
     }
 
 public:
@@ -29,10 +28,12 @@ public:
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 projection;
-    Shader shader; // 目前场景和shader是绑定的
-    std::vector<unsigned int> textures;
+    std::unordered_map<std::string, Shader> shader; // 目前场景和shader是绑定的
+    std::unordered_map<std::string, unsigned int> textures;
 };
 
 Scene gen_multi_rotating_cube_scene();
+
+Scene gen_lighting_scene();
 
 #endif

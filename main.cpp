@@ -36,7 +36,8 @@ int main()
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
 
     // demo 场景生成
-    Scene primary_scene = gen_multi_rotating_cube_scene();
+    // Scene cube_scene = gen_multi_rotating_cube_scene();
+    Scene light_scene = gen_lighting_scene();
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -45,14 +46,17 @@ int main()
         primary_keyboard_callback(window, primary_cam);
 
         // demo 绘制循环
-        multi_rotating_cube_demo_loop(primary_scene);
+        // multi_rotating_cube_demo_loop(cube_scene);
+        scene_light_demo_loop(light_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
 
-    glDeleteVertexArrays(1, &primary_scene.VAO);
-    glDeleteBuffers(1, &primary_scene.VBO);
+    // glDeleteVertexArrays(1, &cube_scene.VAO);
+    // glDeleteBuffers(1, &cube_scene.VBO);
+    // glDeleteVertexArrays(1, &light_scene.VAO);
+    // glDeleteBuffers(1, &light_scene.VBO);
     glfwTerminate();
 
     return 0;
