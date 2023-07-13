@@ -9,19 +9,12 @@ void multi_rotating_cube_demo_loop(Scene scene)
     // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // create transformations
-    glm::mat4 transform = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-    transform = glm::translate(transform, glm::vec3(0.0f, 0.0f, 0.0f));
-    transform = glm::rotate(transform, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-
     // 选定shader
     scene.shader["base_shader"].use();
     unsigned int shader_id = scene.shader["base_shader"].ID;
     // 以下使用两种方式从CPU端告知GPU端设置的Uniform Buffer编号
     glUniform1i(glGetUniformLocation(shader_id, "ourTextureFromCPU"), 0); // set it manually
     scene.shader["base_shader"].setInt("ourTextureFromCPU_ano", 1);
-
-    // glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
 
     // 定义 MVP 变换阵并导入shader
     // Model
@@ -103,16 +96,10 @@ void scene_light_demo_loop(Scene scene)
     glm::vec3 objPos = {0.0f, 0.0f, 0.0f};
     glm::vec3 lightPos = {1.2f, 1.0f, 2.0f};
 
-    // 定义物体颜色和光源颜色
-    glm::vec3 objColor = {1.0f, 0.5f, 0.31f};
-    glm::vec3 lightColor = {1.0f, 1.0f, 1.0f};
-
     /******************************** 绘制光物体 ********************************/
     scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
 
     scene.shader["obj_shader"].setVec3("lightPos", lightPos);
-    scene.shader["obj_shader"].setVec3("objectColor", objColor);
-    scene.shader["obj_shader"].setVec3("lightColor", lightColor);
     scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
 
     // 设置 MVP 变换阵并导入shader
@@ -130,18 +117,20 @@ void scene_light_demo_loop(Scene scene)
     scene.shader["obj_shader"].setMat4("view", view);
     scene.shader["obj_shader"].setMat4("projection", projection);
 
-
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["viking_texture"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_texture"]);
 
     glBindVertexArray(scene.VAO["obj_vao"]);
 
-    // 绘制物体光源对象（顶点已经被默认摆放到了正确的位置，所以物体可以直接进行绘制）
+    // 绘制物体对象（顶点已经被默认摆放到了正确的位置，所以物体可以直接进行绘制）
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glBindVertexArray(0); // 解绑 VAO
 
     // /******************************** 绘制光源 ********************************/
     // 首先应该切换到光源对应的shader
     scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
-    scene.shader["light_shader"].setVec3("lightColor", lightColor);
 
     glBindVertexArray(scene.VAO["light_vao"]); // 绑定 VAO
     model = glm::mat4(1.0f);
