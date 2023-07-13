@@ -7,8 +7,6 @@
 #include "iostream"
 #include "math.h"
 
-#include "shaders/shaders.h"
-#include "textures/gl_textures.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -18,5 +16,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+
+using namespace std;
 
 #endif

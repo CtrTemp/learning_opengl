@@ -35,9 +35,14 @@ int main()
     glfwSetScrollCallback(window, primary_mouse_scroll_callback);      // 注册鼠标滚轮交互回调
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
 
-    // demo 场景生成
-    Scene cube_scene = gen_multi_rotating_cube_scene();
-    Scene light_scene = gen_lighting_scene();
+    // // demo 场景生成
+    // Scene cube_scene = gen_multi_rotating_cube_scene();
+    // Scene light_scene = gen_lighting_scene();
+
+    // model 场景生成
+    Shader ourShader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
+
+    Model ourModel("../models/backpack.obj");
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -45,9 +50,32 @@ int main()
         // 按键交互
         primary_keyboard_callback(window, primary_cam);
 
-        // demo 绘制循环
+        // // demo 绘制循环
         // multi_rotating_cube_demo_loop(cube_scene);
-        scene_light_demo_loop(light_scene);
+        // scene_light_demo_loop(light_scene);
+
+        // render
+        // ------
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        // don't forget to enable shader before setting uniforms
+        ourShader.use();
+
+        // view/projection transformations
+        // 定义 MVP 变换阵并导入shader
+        glm::mat4 view;
+        view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+        glm::mat4 projection = glm::mat4(1.0f);
+        projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+        // render the loaded model
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+        ourShader.setMat4("model", model);
+        ourModel.Draw(ourShader);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

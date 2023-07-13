@@ -3,6 +3,8 @@
 
 #include "global_include.h"
 #include "shaders/shaders.h"
+#include "textures/gl_textures.h"
+#include "models/models.h"
 
 // 创建一个场景，需要在本地创建，并导入到GPU中
 class Scene
