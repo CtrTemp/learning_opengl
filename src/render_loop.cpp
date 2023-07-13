@@ -107,17 +107,20 @@ void scene_light_demo_loop(Scene scene)
     glm::vec3 objColor = {1.0f, 0.5f, 0.31f};
     glm::vec3 lightColor = {1.0f, 1.0f, 1.0f};
 
-
     /******************************** 绘制光物体 ********************************/
     scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
 
-    scene.shader["obj_shader"].setVec3("lightPos", lightPos.x, lightPos.y, lightPos.z);
-    scene.shader["obj_shader"].setVec3("objectColor", objColor.x, objColor.y, objColor.z);
-    scene.shader["obj_shader"].setVec3("lightColor", lightColor.x, lightColor.y, lightColor.z);
+    scene.shader["obj_shader"].setVec3("lightPos", lightPos);
+    scene.shader["obj_shader"].setVec3("objectColor", objColor);
+    scene.shader["obj_shader"].setVec3("lightColor", lightColor);
+    scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
 
     // 设置 MVP 变换阵并导入shader
     model = glm::translate(model, objPos);
-    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+    // // 动态 cube （静态CUBE直接注销这句即可）
+    // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+    // 旋转特定角度
+    model = glm::rotate(model, 1 * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 
     view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
 
@@ -136,14 +139,16 @@ void scene_light_demo_loop(Scene scene)
     // /******************************** 绘制光源 ********************************/
     // 首先应该切换到光源对应的shader
     scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
-    scene.shader["light_shader"].setVec3("lightColor", lightColor.x, lightColor.y, lightColor.z);
+    scene.shader["light_shader"].setVec3("lightColor", lightColor);
 
     glBindVertexArray(scene.VAO["light_vao"]); // 绑定 VAO
     model = glm::mat4(1.0f);
     model = glm::translate(model, lightPos);
     model = glm::scale(model, glm::vec3(0.25f));
     // 动态 cube （静态CUBE直接注销这句即可）
-    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+    // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+    // 旋转特定角度
+    model = glm::rotate(model, 1 * glm::radians(20.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 
     scene.shader["light_shader"].setMat4("model", model);
     scene.shader["light_shader"].setMat4("view", view);
