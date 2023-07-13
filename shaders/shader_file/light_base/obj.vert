@@ -13,9 +13,9 @@ uniform mat4 projection;
 
 void main()
 {    
-    gl_Position = projection * view * model * vec4(position, 1.0f);
-    FragPos = vec3(model * vec4(position, 1.0f));
-    // Normal = normal; // 这个无法动态更新
-    Normal = mat3(transpose(inverse(model))) * normal;  // 可以实时动态更新
+    FragPos = vec3(model * vec4(position, 1.0));
+    Normal = mat3(transpose(inverse(model))) * normal;  
     TexCoords = texCoords;
+    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
 }

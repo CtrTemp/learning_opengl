@@ -100,20 +100,16 @@ void scene_light_demo_loop(Scene scene)
     scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
 
     scene.shader["obj_shader"].setVec3("lightPos", lightPos);
+    scene.shader["obj_shader"].setVec3("light.position", primary_cam.cameraPos);
+    scene.shader["obj_shader"].setVec3("light.direction", primary_cam.cameraFront);
     scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
 
     // 设置 MVP 变换阵并导入shader
-    model = glm::translate(model, objPos);
-    // // 动态 cube （静态CUBE直接注销这句即可）
-    // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-    // 旋转特定角度
-    model = glm::rotate(model, 1 * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 
     view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
 
     projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
 
-    scene.shader["obj_shader"].setMat4("model", model);
     scene.shader["obj_shader"].setMat4("view", view);
     scene.shader["obj_shader"].setMat4("projection", projection);
 
@@ -125,7 +121,32 @@ void scene_light_demo_loop(Scene scene)
     glBindVertexArray(scene.VAO["obj_vao"]);
 
     // 绘制物体对象（顶点已经被默认摆放到了正确的位置，所以物体可以直接进行绘制）
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // 我们可以绘制更多的CUBE
+    std::vector<glm::vec3> cubePositions = {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f, 2.0f, -2.5f),
+        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)};
+
+    for (int i = 0; i < cubePositions.size(); i++)
+    {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, cubePositions[i]);
+        // 动态 cube （静态CUBE直接注销这句即可）
+        float angel = 20.0f * (i + 1);
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angel), glm::vec3(0.5f, 1.0f, 0.0f));
+        // // 旋转特定角度
+        // model = glm::rotate(model, 1 * glm::radians(angel), glm::vec3(1.0f, 0.3f, 0.5f));
+        scene.shader["obj_shader"].setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
     glBindVertexArray(0); // 解绑 VAO
 
     // /******************************** 绘制光源 ********************************/

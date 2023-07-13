@@ -155,7 +155,7 @@ Scene gen_lighting_scene()
     Scene scene;
 
     // 相机初始化坐标更改
-    glm::vec3 cameraPos = {0.0f, 0.0f, 6.0f};
+    glm::vec3 cameraPos = {0.0f, 0.0f, 3.0f};
     primary_cam.cameraPos = cameraPos;
 
     Shader light_shader = Shader("../shaders/shader_file/light_base/light.vert", "../shaders/shader_file/light_base/light.frag");
@@ -189,14 +189,7 @@ Scene gen_lighting_scene()
 
     // 场景物体材质导入
     scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
-    glm::vec3 ambient_item = {1.0f, 0.5f, 0.31f};
-    ambient_item *= glm::vec3(0.1f);
-    glm::vec3 diffuse_item = {1.0f, 0.5f, 0.31f};
-    glm::vec3 specular_item = {0.5f, 0.5f, 0.5f};
-    float shininess_item = 32.0f; // 高光项表现力
-    // scene.shader["obj_shader"].setVec3("material.ambient", ambient_item);
-    // scene.shader["obj_shader"].setVec3("material.diffuse", diffuse_item);
-    // scene.shader["obj_shader"].setVec3("material.specular", specular_item);
+    float shininess_item = 32.0f;     // 高光项表现力
     scene.shader["obj_shader"].setFloat("material.shininess", shininess_item);
 
     // 导入纹理
@@ -211,9 +204,19 @@ Scene gen_lighting_scene()
 
     // 光照信息导入，注意这里仍然是对 obj_shader 的编辑
 
-    scene.shader["obj_shader"].setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-    scene.shader["obj_shader"].setVec3("light.diffuse", 0.5f, 0.5f, 0.5f); // darken diffuse light a bit
+    scene.shader["obj_shader"].setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
+    scene.shader["obj_shader"].setVec3("light.diffuse", 0.8f, 0.8f, 0.8f); // darken diffuse light a bit
     scene.shader["obj_shader"].setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+
+    // 平行光源方向设置
+    scene.shader["obj_shader"].setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+    // 点光源设置
+    scene.shader["obj_shader"].setFloat("light.constant", 1.0f);
+    scene.shader["obj_shader"].setFloat("light.linear", 0.09f);
+    scene.shader["obj_shader"].setFloat("light.quadratic", 0.032f);
+    // 束状光源设置（聚光灯呢？往这打～）
+    scene.shader["obj_shader"].setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));      // 硬边缘
+    scene.shader["obj_shader"].setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f))); // 平滑边缘
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
