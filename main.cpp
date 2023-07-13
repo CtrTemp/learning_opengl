@@ -36,7 +36,7 @@ int main()
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
 
     // demo 场景生成
-    // Scene cube_scene = gen_multi_rotating_cube_scene();
+    Scene cube_scene = gen_multi_rotating_cube_scene();
     Scene light_scene = gen_lighting_scene();
 
     // main render loop

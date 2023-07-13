@@ -11,9 +11,7 @@ public:
     // 一个场景可以有不止一个shader文件控制，所以不应该在构造函数中传入shader路径
     Scene()
     {
-        VAO = 0;
-        VBO = 0;
-        EBO = 0;
+        background = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
         trans = glm::mat4(1.0f);
         model = glm::mat4(1.0f);
         view = glm::mat4(1.0f);
@@ -21,8 +19,9 @@ public:
     }
 
 public:
-    unsigned int VAO;
-    unsigned int VBO;
+    glm::vec4 background;
+    std::unordered_map<std::string, unsigned int> VAO;
+    std::unordered_map<std::string, unsigned int> VBO;
     unsigned int EBO;
     glm::mat4 trans;
     glm::mat4 model;
@@ -30,6 +29,7 @@ public:
     glm::mat4 projection;
     std::unordered_map<std::string, Shader> shader; // 目前场景和shader是绑定的
     std::unordered_map<std::string, unsigned int> textures;
+    // std::vector<>
 };
 
 Scene gen_multi_rotating_cube_scene();
