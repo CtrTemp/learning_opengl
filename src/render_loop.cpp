@@ -130,6 +130,8 @@ void scene_light_demo_loop(Scene scene)
     scene.shader["obj_shader"].setMat4("view", view);
     scene.shader["obj_shader"].setMat4("projection", projection);
 
+
+
     glBindVertexArray(scene.VAO["obj_vao"]);
 
     // 绘制物体光源对象（顶点已经被默认摆放到了正确的位置，所以物体可以直接进行绘制）

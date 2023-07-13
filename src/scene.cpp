@@ -154,7 +154,6 @@ Scene gen_lighting_scene()
 {
     Scene scene;
 
-
     // 相机初始化坐标更改
     glm::vec3 cameraPos = {0.0f, 0.0f, 6.0f};
     primary_cam.cameraPos = cameraPos;
@@ -184,7 +183,23 @@ Scene gen_lighting_scene()
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(sizeof(float) * 3));
     glEnableVertexAttribArray(1);
 
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // 场景物体材质导入
+    scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
+    glm::vec3 ambient_item = {1.0f, 0.5f, 0.31f};
+    ambient_item *= glm::vec3(0.1f);
+    glm::vec3 diffuse_item = {1.0f, 0.5f, 0.31f};
+    glm::vec3 specular_item = {0.5f, 0.5f, 0.5f};
+    float shininess_item = 32.0f; // 高光项表现力
+    scene.shader["obj_shader"].setVec3("material.ambient", ambient_item);
+    scene.shader["obj_shader"].setVec3("material.diffuse", diffuse_item);
+    scene.shader["obj_shader"].setVec3("material.specular", specular_item);
+    scene.shader["obj_shader"].setFloat("material.shininess", shininess_item);
+
+    // 光照信息导入，注意这里仍然是对 obj_shader 的编辑
+
+    scene.shader["obj_shader"].setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
+    scene.shader["obj_shader"].setVec3("light.diffuse", 0.5f, 0.5f, 0.5f); // darken diffuse light a bit
+    scene.shader["obj_shader"].setVec3("light.specular", 1.0f, 1.0f, 1.0f);
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
@@ -200,7 +215,6 @@ Scene gen_lighting_scene()
     // 顶点位置 光源不需要顶点法向量的配置
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
-
 
     // glBindBuffer(GL_ARRAY_BUFFER, 0);
 
