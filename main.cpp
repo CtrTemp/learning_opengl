@@ -35,14 +35,17 @@ int main()
     glfwSetScrollCallback(window, primary_mouse_scroll_callback);      // 注册鼠标滚轮交互回调
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
 
+    // // demo 场景生成
+    // Scene cube_scene = gen_multi_rotating_cube_scene();
+
     // model 场景生成
     Model ourModel("../models/backpack.obj");
     // shader 创建
     Shader ourShader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
 
     // Other render option
-    glEnable(GL_DEPTH_TEST);                   // enable depth test
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // render mode
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // render mode
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -50,7 +53,10 @@ int main()
         // 按键交互
         primary_keyboard_callback(window, primary_cam);
 
-        // render
+        // // demo 场景绘制
+        // multi_rotating_cube_demo_loop(cube_scene);
+
+        // 模型绘制
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

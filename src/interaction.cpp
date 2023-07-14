@@ -102,15 +102,30 @@ void primary_mouse_scroll_callback(GLFWwindow *window, double xoffset, double yo
 /********************************  键盘回调函数 ********************************/
 
 void KeyBoard::keyboard_callback(GLFWwindow *window, Camera &cam)
-
 {
     // // middle speed
-    // float cameraSpeed = 2.5f * deltaTime;
+    float cameraSpeed = 2.5f * deltaTime;
     // fast speed
-    float cameraSpeed = 5.0f * deltaTime;
+    // float cameraSpeed = 5.0f * deltaTime;
 
+    // Esc 用于退出绘制
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    // Tab 用于切换绘制模式（线框/填充）
+    static bool polygon_mode_line = true;
+    static bool TAB_Press_State = false;
+    // 通过变量来控制检测一次按键的按下并抬起操作
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS)
+    {
+        glPolygonMode(GL_FRONT_AND_BACK, polygon_mode_line ? GL_LINE : GL_FILL); // render mode
+        TAB_Press_State = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE && TAB_Press_State == true)
+    {
+        TAB_Press_State = false;
+        polygon_mode_line = !polygon_mode_line;
+    }
 
     // EQ 绝对位置运动控制
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)

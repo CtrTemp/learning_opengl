@@ -129,11 +129,9 @@ Scene gen_multi_rotating_cube_scene()
     // 导入纹理
     unsigned int statue_texture = load_textures("../textures/statue.jpg");
     unsigned int viking_texture = load_textures("../textures/viking_room.png");
-    // unsigned int ray_tracing_texture = load_textures("../textures/ray_tracing.png");
 
     scene.textures.emplace("statue_texture", statue_texture);
     scene.textures.emplace("viking_texture", viking_texture);
-    // scene.textures.push_back(ray_tracing_texture);
 
     // 以下是基本用于测试的变换阵
     // 将 uniform buffer 导入之前一定要先将shader进行选中
