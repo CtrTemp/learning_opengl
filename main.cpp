@@ -35,14 +35,14 @@ int main()
     glfwSetScrollCallback(window, primary_mouse_scroll_callback);      // 注册鼠标滚轮交互回调
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
 
-    // // demo 场景生成
-    // Scene cube_scene = gen_multi_rotating_cube_scene();
-    // Scene light_scene = gen_lighting_scene();
-
     // model 场景生成
+    Model ourModel("../models/backpack.obj");
+    // shader 创建
     Shader ourShader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
 
-    Model ourModel("../models/backpack.obj");
+    // Other render option
+    glEnable(GL_DEPTH_TEST);                   // enable depth test
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // render mode
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -50,12 +50,7 @@ int main()
         // 按键交互
         primary_keyboard_callback(window, primary_cam);
 
-        // // demo 绘制循环
-        // multi_rotating_cube_demo_loop(cube_scene);
-        // scene_light_demo_loop(light_scene);
-
         // render
-        // ------
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -74,17 +69,17 @@ int main()
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+
         ourShader.setMat4("model", model);
+        ourShader.setMat4("view", view);
+        ourShader.setMat4("projection", projection);
+
         ourModel.Draw(ourShader);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
 
-    // glDeleteVertexArrays(1, &cube_scene.VAO);
-    // glDeleteBuffers(1, &cube_scene.VBO);
-    // glDeleteVertexArrays(1, &light_scene.VAO);
-    // glDeleteBuffers(1, &light_scene.VBO);
     glfwTerminate();
 
     return 0;
