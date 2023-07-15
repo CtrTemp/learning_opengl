@@ -1,7 +1,7 @@
 #include "scene.h"
 #include "camera.h"
 
-// // 单个Cube所需的顶点信息
+// 单个Cube所需的顶点信息
 GLfloat vertices[] = {
     // Positions          // Normals           // Texture Coords
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
@@ -79,11 +79,6 @@ Scene gen_multi_rotating_cube_scene()
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
-    // 使用线框模式进行绘制
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    // 使用默认模式绘制几何
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
     // 导入纹理
     unsigned int statue_texture = load_textures("../textures/statue.jpg");
     unsigned int viking_texture = load_textures("../textures/viking_room.png");
@@ -91,17 +86,12 @@ Scene gen_multi_rotating_cube_scene()
     scene.textures.emplace("statue_texture", statue_texture);
     scene.textures.emplace("viking_texture", viking_texture);
 
-    // 以下是基本用于测试的变换阵
-    // 将 uniform buffer 导入之前一定要先将shader进行选中
-    scene.shader["base_shader"].use();
-    // 定义并导入坐标变换阵
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0)); // 逆时针旋转90度
-    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));                       // 长宽高均缩放至原来的0.5倍
-    // 指明向哪一个shader传入这个变换矩阵
-    unsigned int transformLoc = glGetUniformLocation(scene.shader["base_shader"].ID, "transform");
-    // 将变换矩阵数据从 CPU 端导入到 GPU 端
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans)); // or with shader class
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     return scene;
 }
@@ -109,6 +99,9 @@ Scene gen_multi_rotating_cube_scene()
 Scene gen_lighting_scene()
 {
     Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
     // 相机初始化坐标更改
     glm::vec3 cameraPos = {0.0f, 0.0f, 3.0f};
@@ -249,10 +242,15 @@ Scene gen_lighting_scene()
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
-    // 使用线框模式进行绘制
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    // 使用默认模式绘制几何
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // glDepthFunc(GL_ALWAYS);  // 永远都会通过深度测试，也就是说后被渲染的无论如何都会被保留下来
+    // glDepthFunc(GL_NEVER);   // 永远不会通过深度测试，屏幕一片黑，，，
+    glDepthFunc(GL_LESS); // default ： 这将丢弃深度值高于或等于当前深度缓冲区的值的片段
 
     return scene;
 }
@@ -355,10 +353,11 @@ Scene gen_load_model_scene()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
     glEnableVertexAttribArray(2);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0); // 解绑VBO
+    glBindVertexArray(0);             // 解绑VAO，防止在其他地方错误配置它
 
-    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
-
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
     // 使用线框模式进行绘制
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // 使用默认模式绘制几何

@@ -124,7 +124,15 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     return (ambient + diffuse + specular);
 }
 
-// 本章将实现多光源，光源的效果是累加的，分多个计算函数考虑
+
+float LinearizeDepth(float depth)
+{
+    float near = 0.1;
+    float far = 100.0;
+    float z = depth * 2.0 - 1.0; // Back to NDC
+    return (2.0 * near) / (far + near - z * (far - near));
+}
+
 void main() {
 
     // properties
@@ -142,93 +150,13 @@ void main() {
 
     color = vec4(result, 1.0);
 
-    // /********************************* 平行光源效果 *********************************/ 
-    // // 平行光源是没有衰减的，无限远处的光照
-    // // ambient
-    // vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords)); // 环境光也设为贴图值
+    // gl_FragCoord 是内置变量，说明当前片段的位置信息
+    // // 直接这样输出可以看到所有的方块无论远近基本上都是白的，只有在离得很近的时候才变为黑灰
+    // // 这说明了内置的深度测试是非线性的，而且在距离很近的时候是曲率较大的，保证了在近处具有更高的深度测试精度
+    // color = vec4(vec3(gl_FragCoord.z), 1.0);
 
-    // // diffuse 
-    // vec3 norm = normalize(Normal);
-    // // vec3 lightDir = normalize(lightPos - FragPos);
-    // vec3 lightDir = normalize(-light.direction); // 现在我们使用平行光，不再需要一个特定的光源物体
-    // float diff = max(dot(norm, lightDir), 0.0);
-    // vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords)); // 贴图表示漫反射项
-
-    // // specular
-    // vec3 viewDir = normalize(viewPos - FragPos);
-    // vec3 reflectDir = reflect(-lightDir, norm);
-    // float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    // // vec3 specular = vec3(0.0f);
-    // // vec3 specular = light.specular * (spec * material.specular);
-    // vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
-
-    // vec3 result = ambient + diffuse + specular;
-    // color = vec4(result, 1.0);
-
-    // /********************************* 点光源效果 *********************************/ 
-    // // ambient
-    // vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords)); // 环境光也设为贴图值
-
-    // // diffuse 
-    // vec3 norm = normalize(Normal);
-    // vec3 lightDir = normalize(lightPos - FragPos);
-    // float diff = max(dot(norm, lightDir), 0.0);
-    // vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords)); // 贴图表示漫反射项
-
-    // // specular
-    // vec3 viewDir = normalize(viewPos - FragPos);
-    // vec3 reflectDir = reflect(-lightDir, norm);
-    // float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    // vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
-
-    // // 计算关于点光源的衰减 （但问题是这样不会一同影响平行光源么？～）
-    // // 显然是受到了影响的，，，
-    // float distance = length(lightPos - FragPos);
-    // float attenuation = 1.0 / (light.constant + light.linear * distance +
-    //     light.quadratic * (distance * distance));
-
-    // ambient *= attenuation;
-    // diffuse *= attenuation;
-    // specular *= attenuation;
-
-    // vec3 result = ambient + diffuse + specular;
-    // color = vec4(result, 1.0);
-
-    // /********************************* 聚光灯效果 *********************************/ 
-    // vec3 lightDir = normalize(light.position - FragPos);
-
-    // float theta = dot(lightDir, normalize(-light.direction));
-
-    // float epsilon = light.cutOff - light.outerCutOff; // 平滑过渡边缘宽度
-    // float intensity = clamp((theta - light.outerCutOff) / epsilon, 0.0, 1.0); 
-
-    //     // ambient
-    // vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords)); // 环境光也设为贴图值
-
-    //     // diffuse 
-    // vec3 norm = normalize(Normal);
-    // float diff = max(dot(norm, lightDir), 0.0);
-    // vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords)); // 贴图表示漫反射项
-
-    //     // specular
-    // vec3 viewDir = normalize(viewPos - FragPos);
-    // vec3 reflectDir = reflect(-lightDir, norm);
-    // float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    // vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
-
-    //     // 计算关于点光源的衰减 （但问题是这样不会一同影响平行光源么？～）
-    //     // 显然是受到了影响的，，，
-    // float distance = length(light.position - FragPos);
-    // float attenuation = 1.0 / (light.constant + light.linear * distance +
-    //     light.quadratic * (distance * distance));
-    //     // 距离衰减
-    // diffuse *= attenuation;
-    // specular *= attenuation;
-    //     // 平滑边缘过渡
-    // diffuse *= intensity;
-    // specular *= intensity;
-
-    // vec3 result = ambient + diffuse + specular;
-    // color = vec4(result, 1.0);
+    // 以下我们可以将深度测试还原为线性，再来看一下
+    float depth = LinearizeDepth(gl_FragCoord.z);
+    color = vec4(vec3(depth), 1.0);
 
 }
