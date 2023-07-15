@@ -148,16 +148,84 @@ void scene_light_demo_loop(Scene scene)
     }
     glBindVertexArray(0); // 解绑 VAO
 
-    // /******************************** 绘制光源 ********************************/
+    // // 我们可以选择不去绘制光源，但这并不影响光照效果
+    // // /******************************** 绘制点光源 ********************************/
+    // std::vector<glm::vec3> pointLightPositions = {
+    //     glm::vec3(0.7f, 0.2f, 2.0f),
+    //     glm::vec3(2.3f, -3.3f, -4.0f),
+    //     glm::vec3(-4.0f, 2.0f, -12.0f),
+    //     glm::vec3(0.0f, 0.0f, -3.0f)};
+    // // 首先应该切换到光源对应的shader
+    // scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
+
+    // glBindVertexArray(scene.VAO["light_vao"]); // 绑定 VAO
+    // scene.shader["light_shader"].setMat4("view", view);
+    // scene.shader["light_shader"].setMat4("projection", projection);
+
+    // for (int i = 0; i < pointLightPositions.size(); i++)
+    // {
+    //     model = glm::mat4(1.0f);
+    //     model = glm::translate(model, pointLightPositions[i]);
+    //     model = glm::scale(model, glm::vec3(0.25f));
+    //     // 动态 cube （静态CUBE直接注销这句即可）
+    //     float angel = 50.0f;
+    //     model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angel), glm::vec3(0.5f, 1.0f, 0.0f));
+    //     // // 旋转特定角度
+    //     // model = glm::rotate(model, 1 * glm::radians(angel), glm::vec3(1.0f, 0.3f, 0.5f));
+    //     scene.shader["light_shader"].setMat4("model", model);
+    //     glDrawArrays(GL_TRIANGLES, 0, 36);
+    // }
+
+    glBindVertexArray(0); // 解除 VAO 绑定
+}
+
+void scene_load_model_demo_loop(Scene scene)
+{
+    // 模型绘制
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // don't forget to enable shader before setting uniforms
+    scene.shader["obj_shader"].use();
+
+    // 根摄像机一同移动的聚光灯光源
+    scene.shader["obj_shader"].setVec3("spotLight.position", primary_cam.cameraPos);
+    scene.shader["obj_shader"].setVec3("spotLight.direction", primary_cam.cameraFront);
+    // 观察者位置传入
+    scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
+
+    // view/projection transformations
+    // 定义 MVP 变换阵并导入shader
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setMat4("view", view);
+    scene.shader["obj_shader"].setMat4("projection", projection);
+
+    scene.model_obj.Draw(scene.shader["obj_shader"]);
+
+
+    glBindVertexArray(0); // 解绑 VAO
+
+    /******************************** 绘制点光源 ********************************/
     std::vector<glm::vec3> pointLightPositions = {
         glm::vec3(0.7f, 0.2f, 2.0f),
         glm::vec3(2.3f, -3.3f, -4.0f),
         glm::vec3(-4.0f, 2.0f, -12.0f),
         glm::vec3(0.0f, 0.0f, -3.0f)};
     // 首先应该切换到光源对应的shader
-    scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
 
-    glBindVertexArray(scene.VAO["light_vao"]); // 绑定 VAO
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
     scene.shader["light_shader"].setMat4("view", view);
     scene.shader["light_shader"].setMat4("projection", projection);
 

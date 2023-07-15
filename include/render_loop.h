@@ -9,4 +9,6 @@ void multi_rotating_cube_demo_loop(Scene scene);
 
 void scene_light_demo_loop(Scene scene);
 
+void scene_load_model_demo_loop(Scene scene);
+
 #endif

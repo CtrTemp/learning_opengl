@@ -2,48 +2,6 @@
 #include "camera.h"
 
 // // 单个Cube所需的顶点信息
-// float vertices[] = {
-//     -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-//     0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-
-//     -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-//     0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-
-//     -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-//     -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-
-//     0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-//     0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-
-//     -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     -0.5f, -0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-//     -0.5f, -0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-
-//     -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f,
-//     0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 1.0f, 1.0f,
-//     0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 1.0f, 0.0f,
-//     -0.5f, 0.5f, 0.5f, 0.0, 0.0, 0.0, 0.0f, 0.0f,
-//     -0.5f, 0.5f, -0.5f, 0.0, 0.0, 0.0, 0.0f, 1.0f};
 GLfloat vertices[] = {
     // Positions          // Normals           // Texture Coords
     -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
@@ -288,6 +246,116 @@ Scene gen_lighting_scene()
     glEnableVertexAttribArray(0);
 
     // glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}
+
+Scene gen_load_model_scene()
+{
+    Scene scene;
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 0.0f, 6.0f};
+    primary_cam.cameraPos = cameraPos;
+
+    // model 场景生成
+    scene.model_obj = Model("../models/backpack.obj");
+    // shader 创建
+
+    Shader obj_shader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
+    Shader light_shader = Shader("../shaders/shader_file/model_base/light.vert", "../shaders/shader_file/model_base/light.frag");
+    scene.shader.emplace("obj_shader", obj_shader);
+    scene.shader.emplace("light_shader", light_shader);
+
+    scene.shader["obj_shader"].use();
+    // 场景光源设置 多光源设置
+    // 平行光源
+    scene.shader["obj_shader"].setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+    scene.shader["obj_shader"].setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+    scene.shader["obj_shader"].setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+    scene.shader["obj_shader"].setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+    // 点光源
+    std::vector<glm::vec3> pointLightPositions = {
+        glm::vec3(0.7f, 0.2f, 2.0f),
+        glm::vec3(2.3f, -3.3f, -4.0f),
+        glm::vec3(-4.0f, 2.0f, -12.0f),
+        glm::vec3(0.0f, 0.0f, -3.0f)};
+    // point light 1
+    scene.shader["obj_shader"].setVec3("pointLights[0].position", pointLightPositions[0]);
+    scene.shader["obj_shader"].setVec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+    scene.shader["obj_shader"].setVec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+    scene.shader["obj_shader"].setVec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[0].constant", 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[0].linear", 0.09f);
+    scene.shader["obj_shader"].setFloat("pointLights[0].quadratic", 0.032f);
+    // point light 2
+    scene.shader["obj_shader"].setVec3("pointLights[1].position", pointLightPositions[1]);
+    scene.shader["obj_shader"].setVec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
+    scene.shader["obj_shader"].setVec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
+    scene.shader["obj_shader"].setVec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[1].constant", 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[1].linear", 0.09f);
+    scene.shader["obj_shader"].setFloat("pointLights[1].quadratic", 0.032f);
+    // point light 3
+    scene.shader["obj_shader"].setVec3("pointLights[2].position", pointLightPositions[2]);
+    scene.shader["obj_shader"].setVec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
+    scene.shader["obj_shader"].setVec3("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f);
+    scene.shader["obj_shader"].setVec3("pointLights[2].specular", 1.0f, 1.0f, 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[2].constant", 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[2].linear", 0.09f);
+    scene.shader["obj_shader"].setFloat("pointLights[2].quadratic", 0.032f);
+    // point light 4
+    scene.shader["obj_shader"].setVec3("pointLights[3].position", pointLightPositions[3]);
+    scene.shader["obj_shader"].setVec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
+    scene.shader["obj_shader"].setVec3("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f);
+    scene.shader["obj_shader"].setVec3("pointLights[3].specular", 1.0f, 1.0f, 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[3].constant", 1.0f);
+    scene.shader["obj_shader"].setFloat("pointLights[3].linear", 0.09f);
+    scene.shader["obj_shader"].setFloat("pointLights[3].quadratic", 0.032f);
+    // spotLight 作为摄像机附加打光，应该在render loop中进行实时更新
+    scene.shader["obj_shader"].setVec3("spotLight.position", primary_cam.cameraPos);
+    scene.shader["obj_shader"].setVec3("spotLight.direction", primary_cam.cameraFront);
+    scene.shader["obj_shader"].setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+    scene.shader["obj_shader"].setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+    scene.shader["obj_shader"].setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+    scene.shader["obj_shader"].setFloat("spotLight.constant", 1.0f);
+    scene.shader["obj_shader"].setFloat("spotLight.linear", 0.09f);
+    scene.shader["obj_shader"].setFloat("spotLight.quadratic", 0.032f);
+    scene.shader["obj_shader"].setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+    scene.shader["obj_shader"].setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+
+    /************************ 绑定场景光源 VAO ************************/
+
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点颜色
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    // 顶点纹理坐标
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 

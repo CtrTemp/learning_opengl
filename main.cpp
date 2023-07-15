@@ -37,11 +37,8 @@ int main()
 
     // // demo 场景生成
     // Scene cube_scene = gen_multi_rotating_cube_scene();
-
-    // model 场景生成
-    Model ourModel("../models/backpack.obj");
-    // shader 创建
-    Shader ourShader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
+    // Scene light_scene = gen_lighting_scene();
+    Scene model_scene = gen_load_model_scene();
 
     // Other render option
     glEnable(GL_DEPTH_TEST); // enable depth test
@@ -53,34 +50,11 @@ int main()
         // 按键交互
         primary_keyboard_callback(window, primary_cam);
 
-        // // demo 场景绘制
+        // demo 场景绘制
         // multi_rotating_cube_demo_loop(cube_scene);
+        // scene_light_demo_loop(light_scene);
+        scene_load_model_demo_loop(model_scene);
 
-        // 模型绘制
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        // don't forget to enable shader before setting uniforms
-        ourShader.use();
-
-        // view/projection transformations
-        // 定义 MVP 变换阵并导入shader
-        glm::mat4 view;
-        view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
-
-        glm::mat4 projection = glm::mat4(1.0f);
-        projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
-
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
-
-        ourShader.setMat4("model", model);
-        ourShader.setMat4("view", view);
-        ourShader.setMat4("projection", projection);
-
-        ourModel.Draw(ourShader);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
