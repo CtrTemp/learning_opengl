@@ -155,8 +155,8 @@ void main() {
     // // 这说明了内置的深度测试是非线性的，而且在距离很近的时候是曲率较大的，保证了在近处具有更高的深度测试精度
     // color = vec4(vec3(gl_FragCoord.z), 1.0);
 
-    // 以下我们可以将深度测试还原为线性，再来看一下
-    float depth = LinearizeDepth(gl_FragCoord.z);
-    color = vec4(vec3(depth), 1.0);
+    // // 以下我们可以将深度测试还原为线性，再来看一下
+    // float depth = LinearizeDepth(gl_FragCoord.z);
+    // color = vec4(vec3(depth), 1.0);
 
 }

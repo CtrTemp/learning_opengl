@@ -84,8 +84,9 @@ void scene_light_demo_loop(Scene scene)
     glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
     // glClear(GL_COLOR_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
-    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制（如果使能了模板缓冲，必须在绘制循环开始前将其清空）
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     // 定义 MVP 变换阵
     glm::mat4 model = glm::mat4(1.0f);
@@ -106,22 +107,16 @@ void scene_light_demo_loop(Scene scene)
     // 设置 MVP 变换阵并导入shader
 
     view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
-
     projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
 
     scene.shader["obj_shader"].setMat4("view", view);
     scene.shader["obj_shader"].setMat4("projection", projection);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["viking_texture"]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_texture"]);
+    scene.shader["frame_shader"].use(); // 以下对 frame shader 进行配置 边框的view 和 projection 矩阵是相同的
+    scene.shader["frame_shader"].setMat4("view", view);
+    scene.shader["frame_shader"].setMat4("projection", projection);
 
-    glBindVertexArray(scene.VAO["obj_vao"]);
-
-    // 绘制物体对象（顶点已经被默认摆放到了正确的位置，所以物体可以直接进行绘制）
-
-    // 我们可以绘制更多的CUBE
+    // 绘制多个物体对象
     std::vector<glm::vec3> cubePositions = {
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(2.0f, 5.0f, -15.0f),
@@ -134,6 +129,19 @@ void scene_light_demo_loop(Scene scene)
         glm::vec3(1.5f, 0.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
 
+    scene.shader["obj_shader"].use(); // 首先使用正常的 shader 对物体进行一次绘制
+
+    glStencilMask(0x00);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["viking_texture"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_texture"]);
+    // 1st. Render pass, draw objects as normal, filling the stencil buffer
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
+    glBindVertexArray(scene.VAO["obj_vao"]);
     for (int i = 0; i < cubePositions.size(); i++)
     {
         model = glm::mat4(1.0f);
@@ -146,9 +154,43 @@ void scene_light_demo_loop(Scene scene)
         scene.shader["obj_shader"].setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+
+    // == =============
+    // 2nd. Render pass, now draw slightly scaled versions of the objects, this time disabling stencil writing.
+    // Because stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are now not drawn, thus only drawing
+    // the objects' size differences, making it look like borders.
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+    scene.shader["frame_shader"].use(); // 其次使用绘制边框的 shader 对物体进行第二次绘制
+    float scale = 0.9f;
+
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["viking_texture"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_texture"]);
+
+    for (int i = 0; i < cubePositions.size(); i++)
+    {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, cubePositions[i]);
+        model = glm::scale(model, glm::vec3(scale));
+        // 动态 cube （静态CUBE直接注销这句即可）
+        float angel = 20.0f * (i + 1);
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angel), glm::vec3(0.5f, 1.0f, 0.0f));
+        // // 旋转特定角度
+        // model = glm::rotate(model, 1 * glm::radians(angel), glm::vec3(1.0f, 0.3f, 0.5f));
+        scene.shader["frame_shader"].setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+
     glBindVertexArray(0); // 解绑 VAO
 
-    // // 我们可以选择不去绘制光源，但这并不影响光照效果
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 0, 0xFF);
+    glEnable(GL_DEPTH_TEST);
+
     // // /******************************** 绘制点光源 ********************************/
     // std::vector<glm::vec3> pointLightPositions = {
     //     glm::vec3(0.7f, 0.2f, 2.0f),
@@ -176,7 +218,7 @@ void scene_light_demo_loop(Scene scene)
     //     glDrawArrays(GL_TRIANGLES, 0, 36);
     // }
 
-    glBindVertexArray(0); // 解除 VAO 绑定
+    // glBindVertexArray(0); // 解除 VAO 绑定
 }
 
 void scene_load_model_demo_loop(Scene scene)
@@ -213,7 +255,6 @@ void scene_load_model_demo_loop(Scene scene)
 
     scene.model_obj.Draw(scene.shader["obj_shader"]);
 
-
     glBindVertexArray(0); // 解绑 VAO
 
     /******************************** 绘制点光源 ********************************/
@@ -225,7 +266,7 @@ void scene_load_model_demo_loop(Scene scene)
     // 首先应该切换到光源对应的shader
 
     glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
-    scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
+    scene.shader["light_shader"].use();       // 以下对 light shader 进行配置
     scene.shader["light_shader"].setMat4("view", view);
     scene.shader["light_shader"].setMat4("projection", projection);
 

@@ -109,8 +109,10 @@ Scene gen_lighting_scene()
 
     Shader light_shader = Shader("../shaders/shader_file/light_base/light.vert", "../shaders/shader_file/light_base/light.frag");
     Shader obj_shader = Shader("../shaders/shader_file/light_base/obj.vert", "../shaders/shader_file/light_base/obj.frag");
+    Shader frame_shader = Shader("../shaders/shader_file/light_base/frame.vert", "../shaders/shader_file/light_base/frame.frag");
     scene.shader.emplace("light_shader", light_shader);
     scene.shader.emplace("obj_shader", obj_shader);
+    scene.shader.emplace("frame_shader", frame_shader);
 
     scene.VAO.emplace("light_vao", 0);
     scene.VAO.emplace("obj_vao", 0);
@@ -251,6 +253,9 @@ Scene gen_lighting_scene()
     // glDepthFunc(GL_ALWAYS);  // 永远都会通过深度测试，也就是说后被渲染的无论如何都会被保留下来
     // glDepthFunc(GL_NEVER);   // 永远不会通过深度测试，屏幕一片黑，，，
     glDepthFunc(GL_LESS); // default ： 这将丢弃深度值高于或等于当前深度缓冲区的值的片段
+
+    // // stencil test
+    // glEnable(GL_STENCIL_TEST); // enable stencil test 如果使能了模板缓冲，必须在绘制循环开始前将其清空
 
     return scene;
 }
