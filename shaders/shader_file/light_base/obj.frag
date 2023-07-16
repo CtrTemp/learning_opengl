@@ -124,9 +124,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     return (ambient + diffuse + specular);
 }
 
-
-float LinearizeDepth(float depth)
-{
+float LinearizeDepth(float depth) {
     float near = 0.1;
     float far = 100.0;
     float z = depth * 2.0 - 1.0; // Back to NDC

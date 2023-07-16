@@ -254,8 +254,18 @@ Scene gen_lighting_scene()
     // glDepthFunc(GL_NEVER);   // 永远不会通过深度测试，屏幕一片黑，，，
     glDepthFunc(GL_LESS); // default ： 这将丢弃深度值高于或等于当前深度缓冲区的值的片段
 
-    // // stencil test
-    // glEnable(GL_STENCIL_TEST); // enable stencil test 如果使能了模板缓冲，必须在绘制循环开始前将其清空
+    // stencil test
+    glEnable(GL_STENCIL_TEST); // enable stencil test 如果使能了模板缓冲，必须在绘制循环开始前将其清空
+    // 定义何时更新模板函数：
+    // 参数1：GL_NOTEQUAL：当现有模板值与新的模板值不相等时进行更新
+    // 参数2：ref：更新时，模板值将被更新为什么？
+    // 参数3：mask：更新值将会取与mask进行AND位操作后得到的值
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    // 更新时的行为：
+    // 参数1：GL_KEEP：模板测试不通过时保留原来的模板值
+    // 参数2：GL_KEEP：深度测试不通过时保留原来的模板值
+    // 参数3：GL_REPLACE：深度测试、模板测试均通过时将 glStencilFunc 中设置的第二参数ref值替换旧的模板值
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     return scene;
 }

@@ -9,8 +9,8 @@ public:
     Camera()
     {
         fov = 45.0f;
-        frame_width = 800;
-        frame_height = 600;
+        frame_width = 1600;
+        frame_height = 900;
         yaw = -90.0f;
         pitch = 0.0f;
 
