@@ -50,8 +50,12 @@ Scene gen_multi_rotating_cube_scene()
 {
     Scene scene;
 
-    Shader base_shader = Shader("../shaders/shader_file/v.vert", "../shaders/shader_file/f.frag");
+    Shader base_shader = Shader("../shaders/shader_file/blend_base/base.vert", "../shaders/shader_file/blend_base/base.frag");
+    Shader grass_shader = Shader("../shaders/shader_file/blend_base/base.vert", "../shaders/shader_file/blend_base/grass.frag");
+    Shader transparent_shader = Shader("../shaders/shader_file/blend_base/base.vert", "../shaders/shader_file/blend_base/transparent.frag");
     scene.shader.emplace("base_shader", base_shader);
+    scene.shader.emplace("grass_shader", grass_shader);
+    scene.shader.emplace("transparent_shader", transparent_shader);
 
     scene.VAO.emplace("base_vao", 0);
     scene.VBO.emplace("base_vbo", 0);
@@ -80,14 +84,29 @@ Scene gen_multi_rotating_cube_scene()
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
     // 导入纹理
-    unsigned int statue_texture = load_textures("../textures/statue.jpg");
-    unsigned int viking_texture = load_textures("../textures/viking_room.png");
+    unsigned int box_texture = load_textures("../textures/box.png");
+    unsigned int grass_texture = load_textures("../textures/grass.png");
+    unsigned int transparent_texture = load_textures("../textures/transparent.png");
 
-    scene.textures.emplace("statue_texture", statue_texture);
-    scene.textures.emplace("viking_texture", viking_texture);
+    scene.textures.emplace("box_texture", box_texture);
+    scene.textures.emplace("grass_texture", grass_texture);
+    scene.textures.emplace("transparent_texture", transparent_texture);
+
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setInt("box_texture", 0);
+
+    scene.shader["grass_shader"].use();
+    scene.shader["grass_shader"].setInt("grass_texture", 0);
+
+    scene.shader["transparent_shader"].use();
+    scene.shader["transparent_shader"].setInt("transparent_texture", 0);
 
     // Other render option
     glEnable(GL_DEPTH_TEST); // enable depth test
+
+    glEnable(GL_BLEND); // enable transparent color blend
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // 使用线框模式进行绘制
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // 使用默认模式绘制几何
@@ -152,22 +171,6 @@ Scene gen_lighting_scene()
 
     scene.shader["obj_shader"].setInt("material.diffuse", 0);
     scene.shader["obj_shader"].setInt("material.specular", 1);
-
-    // 光照信息导入，注意这里仍然是对 obj_shader 的编辑
-
-    // scene.shader["obj_shader"].setVec3("light.ambient", 0.1f, 0.1f, 0.1f);
-    // scene.shader["obj_shader"].setVec3("light.diffuse", 0.8f, 0.8f, 0.8f); // darken diffuse light a bit
-    // scene.shader["obj_shader"].setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-
-    // // 平行光源方向设置
-    // scene.shader["obj_shader"].setVec3("light.direction", -0.2f, -1.0f, -0.3f);
-    // // 点光源设置
-    // scene.shader["obj_shader"].setFloat("light.constant", 1.0f);
-    // scene.shader["obj_shader"].setFloat("light.linear", 0.09f);
-    // scene.shader["obj_shader"].setFloat("light.quadratic", 0.032f);
-    // // 束状光源设置（聚光灯呢？往这打～）
-    // scene.shader["obj_shader"].setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));      // 硬边缘
-    // scene.shader["obj_shader"].setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f))); // 平滑边缘
 
     // 多光源设置
     // 平行光源

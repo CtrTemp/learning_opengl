@@ -4,52 +4,19 @@ void multi_rotating_cube_demo_loop(Scene scene)
 {
     // set clear frame color
     glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
-    // glClear(GL_COLOR_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
     // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // 选定shader
-    scene.shader["base_shader"].use();
-    unsigned int shader_id = scene.shader["base_shader"].ID;
-    // 以下使用两种方式从CPU端告知GPU端设置的Uniform Buffer编号
-    glUniform1i(glGetUniformLocation(shader_id, "ourTextureFromCPU"), 0); // set it manually
-    scene.shader["base_shader"].setInt("ourTextureFromCPU_ano", 1);
-
-    // 定义 MVP 变换阵并导入shader
-    // Model
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-
+    // 定义 MVP 变换阵 中的 view 和 project 变换阵一般是不变的，可以预先定义并设置
     glm::mat4 view;
     view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
 
     glm::mat4 projection = glm::mat4(1.0f);
     projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
 
-    unsigned int modelLoc = glGetUniformLocation(shader_id, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-    unsigned int viewLoc = glGetUniformLocation(shader_id, "view");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
-    unsigned int projectionLoc = glGetUniformLocation(shader_id, "projection");
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-    // 通过 uniform buffer 向GPU传递一个渐变的颜色值
-    GLfloat timeValue = glfwGetTime();
-    GLfloat greenValue = sin(timeValue) / 2 + 0.5;
-    GLint vertexColorLocation = glGetUniformLocation(shader_id, "ourColorFromCPU");
-    glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
-    // texture 值
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["statue_texture"]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["viking_texture"]);
-
-    glBindVertexArray(scene.VAO["base_vao"]);
-
-    // 我们可以绘制更多的CUBE
-    glm::vec3 cubePositions[] = {
+    // 箱子坐标与定义
+    vector<glm::vec3> cubePositions = {
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(2.0f, 5.0f, -15.0f),
         glm::vec3(-1.5f, -2.2f, -2.5f),
@@ -61,8 +28,20 @@ void multi_rotating_cube_demo_loop(Scene scene)
         glm::vec3(1.5f, 0.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
 
-    // 绘制更多的 CUBE
-    for (unsigned int i = 0; i < 10; i++)
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, scene.textures["transparent_texture"]);
+
+    /****************************** 绘制箱子 ******************************/
+    // 选定shader
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+    // texture 值
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["box_texture"]);
+
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    for (unsigned int i = 0; i < cubePositions.size(); i++)
     {
         glm::mat4 model = glm::mat4(1.0f);
         model = glm::translate(model, cubePositions[i]);
@@ -70,12 +49,53 @@ void multi_rotating_cube_demo_loop(Scene scene)
         // 静态 cube
         // model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
         // 动态 cube
-        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-        unsigned int modelLoc = glGetUniformLocation(shader_id, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        scene.shader["base_shader"].setMat4("model", model);
 
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 12, 24);
+    }
+    glBindVertexArray(0); // 解绑 VAO
+
+    /****************************** 绘制草丛 ******************************/
+
+    // 选定shader
+    scene.shader["grass_shader"].use();
+    scene.shader["grass_shader"].setMat4("view", view);
+    scene.shader["grass_shader"].setMat4("projection", projection);
+    // texture 值
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["grass_texture"]);
+
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    for (unsigned int i = 0; i < cubePositions.size() / 2; i++)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, cubePositions[i]);
+        scene.shader["grass_shader"].setMat4("model", model);
+        glDrawArrays(GL_TRIANGLES, 6, 6);
+    }
+    glBindVertexArray(0); // 解绑 VAO
+
+    /****************************** 绘制半透明 ******************************/
+
+    // 选定shader
+    scene.shader["transparent_shader"].use();
+    scene.shader["transparent_shader"].setMat4("view", view);
+    scene.shader["transparent_shader"].setMat4("projection", projection);
+    // texture 值
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["transparent_texture"]);
+
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    for (unsigned int i = 5; i < cubePositions.size(); i++)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, cubePositions[i]);
+        scene.shader["transparent_shader"].setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+    glBindVertexArray(0); // 解绑 VAO
 }
 
 void scene_light_demo_loop(Scene scene)
