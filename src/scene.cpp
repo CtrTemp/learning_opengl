@@ -295,7 +295,7 @@ Scene gen_load_model_scene()
     primary_cam.cameraPos = cameraPos;
 
     // model 场景生成
-    scene.model_obj = Model("../models/backpack.obj");
+    scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
     // shader 创建
 
     Shader obj_shader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
@@ -446,7 +446,7 @@ Scene gen_skybox_scene()
     Scene scene;
 
     // model 导入
-    scene.model_obj = Model("../models/backpack.obj");
+    scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
 
     Shader base_shader = Shader("../shaders/shader_file/skybox_base/base.vert", "../shaders/shader_file/skybox_base/base.frag");
     Shader model_shader = Shader("../shaders/shader_file/skybox_base/model.vert", "../shaders/shader_file/skybox_base/model.frag");
@@ -573,7 +573,7 @@ Scene gen_explode_model_scene()
     Scene scene;
 
     // model 模型导入
-    scene.model_obj = Model("../models/backpack.obj");
+    scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
 
     Shader base_shader = Shader(
         "../shaders/shader_file/geometry_base/model.vert",
@@ -598,7 +598,7 @@ Scene gen_visualize_model_normal_scene()
     Scene scene;
 
     // model 模型导入
-    scene.model_obj = Model("../models/backpack.obj");
+    scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
 
     Shader visual_norm_shader = Shader(
         "../shaders/shader_file/geometry_base/visual_norm.vert",
@@ -611,6 +611,214 @@ Scene gen_visualize_model_normal_scene()
 
     scene.shader.emplace("visual_norm_shader", visual_norm_shader);
     scene.shader.emplace("base_shader", base_shader);
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}
+
+float quadVertices[] = {
+    // positions     // colors
+    -0.05f, 0.05f, 1.0f, 0.0f, 0.0f,
+    0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
+    -0.05f, -0.05f, 0.0f, 0.0f, 1.0f,
+
+    -0.05f, 0.05f, 1.0f, 0.0f, 0.0f,
+    0.05f, -0.05f, 0.0f, 1.0f, 0.0f,
+    0.05f, 0.05f, 0.0f, 1.0f, 1.0f};
+
+Scene gen_render_instance_scene()
+{
+    Scene scene;
+
+    Shader base_shader = Shader("../shaders/shader_file/instance_base/base.vert", "../shaders/shader_file/instance_base/base.frag");
+    scene.shader.emplace("base_shader", base_shader);
+
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点颜色
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(sizeof(float) * 2));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}
+
+Scene gen_render_instance_scene_opt()
+{
+    // 由于要绘制100个贴片，所以之类将其偏移量进行填充
+    glm::vec2 translations[100];
+    int index = 0;
+    float offset = 0.1f;
+    for (int y = -10; y < 10; y += 2)
+    {
+        for (int x = -10; x < 10; x += 2)
+        {
+            glm::vec2 translation;
+            translation.x = (float)x / 10.0f + offset;
+            translation.y = (float)y / 10.0f + offset;
+            translations[index++] = translation;
+        }
+    }
+
+    Scene scene;
+
+    Shader base_shader = Shader("../shaders/shader_file/instance_base/opt.vert", "../shaders/shader_file/instance_base/opt.frag");
+    scene.shader.emplace("base_shader", base_shader);
+
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+    scene.VBO.emplace("instance_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["instance_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["instance_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW); // 初始化数据
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点颜色
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(sizeof(float) * 2));
+    glEnableVertexAttribArray(1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["instance_vbo"]);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glVertexAttribDivisor(2, 1);
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}
+
+Scene gen_mars_simu_scene()
+{
+    primary_cam.cameraPos = glm::vec3(0.0f, 50.0f, 100.0f);
+
+    Scene scene;
+
+    // model 模型导入
+    scene.model_obj.emplace("mars", Model("../models/mars/planet.obj"));
+    // model 模型导入
+    scene.model_obj.emplace("rock", Model("../models/rock/rock.obj"));
+
+    Shader base_shader = Shader(
+        "../shaders/shader_file/instance_planet/base.vert",
+        "../shaders/shader_file/instance_planet/base.frag");
+    Shader asteroid_shader = Shader(
+        "../shaders/shader_file/instance_planet/asteroids.vert",
+        "../shaders/shader_file/instance_planet/asteroids.frag");
+    scene.shader.emplace("base_shader", base_shader);
+    scene.shader.emplace("asteroid_shader", asteroid_shader);
+
+    // generate a large list of semi-random model transformation matrices
+    // ------------------------------------------------------------------
+    unsigned int amount = 5000;
+    glm::mat4 *modelMatrices;
+    modelMatrices = new glm::mat4[amount];
+    srand(static_cast<unsigned int>(glfwGetTime())); // initialize random seed
+    float radius = 100.0;
+    float offset = 25.0f;
+    for (unsigned int i = 0; i < amount; i++)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        // 1. translation: displace along circle with 'radius' in range [-offset, offset]
+        float angle = (float)i / (float)amount * 360.0f;
+        float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float x = sin(angle) * radius + displacement;
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float y = displacement * 0.4f; // keep height of asteroid field smaller compared to width of x and z
+        displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+        float z = cos(angle) * radius + displacement;
+        model = glm::translate(model, glm::vec3(x, y, z));
+
+        // 2. scale: Scale between 0.05 and 0.25f
+        float scale = static_cast<float>((rand() % 20) / 100.0 + 0.05);
+        model = glm::scale(model, glm::vec3(scale));
+
+        // 3. rotation: add random rotation around a (semi)randomly picked rotation axis vector
+        float rotAngle = static_cast<float>((rand() % 360));
+        model = glm::rotate(model, rotAngle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+        // 4. now add to list of matrices
+        modelMatrices[i] = model;
+    }
+
+
+    // configure instanced array
+    // -------------------------
+    unsigned int buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(glm::mat4), &modelMatrices[0], GL_STATIC_DRAW);
+
+    // set transformation matrices as an instance vertex attribute (with divisor 1)
+    // note: we're cheating a little by taking the, now publicly declared, VAO of the model's mesh(es) and adding new vertexAttribPointers
+    // normally you'd want to do this in a more organized fashion, but for learning purposes this will do.
+    // -----------------------------------------------------------------------------------------------------------------------------------
+    for (unsigned int i = 0; i < scene.model_obj["rock"].meshes.size(); i++)
+    {
+        unsigned int VAO = scene.model_obj["rock"].meshes[i].VAO;
+        glBindVertexArray(VAO);
+        // set attribute pointers for matrix (4 times vec4)
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+        glEnableVertexAttribArray(6);
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+        glVertexAttribDivisor(3, 1);
+        glVertexAttribDivisor(4, 1);
+        glVertexAttribDivisor(5, 1);
+        glVertexAttribDivisor(6, 1);
+
+        glBindVertexArray(0);
+    }
 
     // Other render option
     glEnable(GL_DEPTH_TEST); // enable depth test

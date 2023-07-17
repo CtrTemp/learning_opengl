@@ -19,4 +19,10 @@ void scene_explode_model_demo_loop(Scene scene);
 
 void scene_visualize_model_normal_loop(Scene scene);
 
+void rendering_instance_demo_loop(Scene scene);
+
+void rendering_instance_demo_loop_opt(Scene scene);
+
+void planet_demo_loop(Scene scene);
+
 #endif

@@ -42,7 +42,12 @@ int main()
     // Scene skybox_scene = gen_skybox_scene();
     // Scene geom_scene = gen_geometry_shader_scene();
     // Scene explode_scene = gen_explode_model_scene();
-    Scene visual_norm_scene = gen_visualize_model_normal_scene();
+    // Scene visual_norm_scene = gen_visualize_model_normal_scene();
+    // Scene multi_instance_scene = gen_render_instance_scene();
+    // Scene multi_instance_scene_opt = gen_render_instance_scene_opt();
+    Scene planet_scene = gen_mars_simu_scene();
+    
+    
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -57,7 +62,10 @@ int main()
         // scene_skybox_demo_loop(skybox_scene);
         // scene_geometry_shader_demo_loop(geom_scene);
         // scene_explode_model_demo_loop(explode_scene);
-        scene_visualize_model_normal_loop(visual_norm_scene);
+        // scene_visualize_model_normal_loop(visual_norm_scene);
+        // rendering_instance_demo_loop(multi_instance_scene);
+        // rendering_instance_demo_loop_opt(multi_instance_scene_opt);
+        planet_demo_loop(planet_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

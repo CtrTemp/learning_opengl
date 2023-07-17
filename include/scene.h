@@ -32,7 +32,7 @@ public:
     std::unordered_map<std::string, Shader> shader; // 目前场景和shader是绑定的
     std::unordered_map<std::string, unsigned int> textures;
     // std::vector<>
-    Model model_obj;
+    std::unordered_map<std::string, Model> model_obj;
 };
 
 Scene gen_multi_rotating_cube_scene();
@@ -48,5 +48,11 @@ Scene gen_geometry_shader_scene();
 Scene gen_explode_model_scene();
 
 Scene gen_visualize_model_normal_scene();
+
+Scene gen_render_instance_scene();
+
+Scene gen_render_instance_scene_opt();
+
+Scene gen_mars_simu_scene();
 
 #endif

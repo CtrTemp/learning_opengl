@@ -280,7 +280,7 @@ void scene_load_model_demo_loop(Scene scene)
     scene.shader["obj_shader"].setMat4("view", view);
     scene.shader["obj_shader"].setMat4("projection", projection);
 
-    scene.model_obj.Draw(scene.shader["obj_shader"]);
+    scene.model_obj["backpack"].Draw(scene.shader["obj_shader"]);
 
     glBindVertexArray(0); // 解绑 VAO
 
@@ -342,7 +342,7 @@ void scene_skybox_demo_loop(Scene scene)
     model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));  // it's a bit too big for our scene, so scale it down
 
     scene.shader["model_shader"].setMat4("model", model);
-    scene.model_obj.Draw(scene.shader["model_shader"]);
+    scene.model_obj["back_pack"].Draw(scene.shader["model_shader"]);
 
     /****************************** 绘制箱子 ******************************/
     // 箱子坐标与定义
@@ -450,7 +450,7 @@ void scene_explode_model_demo_loop(Scene scene)
     scene.shader["base_shader"].setMat4("projection", projection);
     scene.shader["base_shader"].setFloat("time", glfwGetTime()); // 爆炸分离的效果
 
-    scene.model_obj.Draw(scene.shader["base_shader"]);
+    scene.model_obj["backpack"].Draw(scene.shader["base_shader"]);
 
     glBindVertexArray(0); // 解除 VAO 绑定
 }
@@ -478,14 +478,115 @@ void scene_visualize_model_normal_loop(Scene scene)
     scene.shader["base_shader"].setMat4("view", view);
     scene.shader["base_shader"].setMat4("projection", projection);
 
-    scene.model_obj.Draw(scene.shader["base_shader"]);
+    scene.model_obj["backpack"].Draw(scene.shader["base_shader"]);
 
     scene.shader["visual_norm_shader"].use();
     scene.shader["visual_norm_shader"].setMat4("model", model);
     scene.shader["visual_norm_shader"].setMat4("view", view);
     scene.shader["visual_norm_shader"].setMat4("projection", projection);
 
-    scene.model_obj.Draw(scene.shader["visual_norm_shader"]);
+    scene.model_obj["backpack"].Draw(scene.shader["visual_norm_shader"]);
 
     glBindVertexArray(0); // 解除 VAO 绑定
+}
+
+void rendering_instance_demo_loop(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 由于要绘制100个贴片，所以之类将其偏移量进行填充
+    glm::vec2 translations[100];
+    int index = 0;
+    float offset = 0.1f;
+    for (int y = -10; y < 10; y += 2)
+    {
+        for (int x = -10; x < 10; x += 2)
+        {
+            glm::vec2 translation;
+            translation.x = (float)x / 10.0f + offset;
+            translation.y = (float)y / 10.0f + offset;
+            translations[index++] = translation;
+        }
+    }
+
+    // 选定shader
+    scene.shader["base_shader"].use();
+    for (unsigned int i = 0; i < 100; i++)
+    {
+        scene.shader["base_shader"].setVec2(("offsets[" + std::to_string(i) + "]"), translations[i]);
+    }
+
+    // 一句指令绘制所有的方框，而非重复执行很多次指令
+    glBindVertexArray(scene.VAO["base_vao"]);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+
+    glBindVertexArray(0); // 解绑 VAO
+}
+
+void rendering_instance_demo_loop_opt(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 选定shader
+    scene.shader["base_shader"].use();
+
+    // 一句指令绘制所有的方框，而非重复执行很多次指令
+    glBindVertexArray(scene.VAO["base_vao"]);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+
+    glBindVertexArray(0); // 解绑 VAO
+}
+
+void planet_demo_loop(Scene scene)
+{
+
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 选定shader
+    // view/projection transformations
+    // 定义 MVP 变换阵并导入shader
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 1000.0f);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+
+    // Draw the planet
+    scene.shader["base_shader"].use();
+
+    scene.shader["base_shader"].setMat4("model", model);
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+    scene.model_obj["mars"].Draw(scene.shader["base_shader"]);
+
+    // Draw the meteorities
+    scene.shader["asteroid_shader"].use();
+    scene.shader["asteroid_shader"].setMat4("view", view);
+    scene.shader["asteroid_shader"].setMat4("projection", projection);
+    scene.shader["asteroid_shader"].setInt("texture_diffuse1", 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.model_obj["rock"].textures_loaded[0].id); // note: we also made the textures_loaded vector public (instead of private) from the model class.
+    for (unsigned int i = 0; i < scene.model_obj["rock"].meshes.size(); i++)
+    {
+        glBindVertexArray(scene.model_obj["rock"].meshes[i].VAO);
+        glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(scene.model_obj["rock"].meshes[i].indices.size()), GL_UNSIGNED_INT, 0, 5000);
+        glBindVertexArray(0);
+    }
 }
