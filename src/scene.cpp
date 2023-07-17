@@ -522,3 +522,103 @@ Scene gen_skybox_scene()
 
     return scene;
 }
+
+Scene gen_geometry_shader_scene()
+{
+
+    float points[] = {
+        -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, // top-left
+        0.5f, 0.5f, 0.0f, 1.0f, 0.0f,  // top-right
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // bottom-right
+        -0.5f, -0.5f, 1.0f, 1.0f, 0.0f // bottom-left
+    };
+
+    Scene scene;
+
+    Shader base_shader = Shader(
+        "../shaders/shader_file/geometry_base/geo.vert",
+        "../shaders/shader_file/geometry_base/geo.frag",
+        "../shaders/shader_file/geometry_base/geo.geom");
+
+    Shader house_shader = Shader(
+        "../shaders/shader_file/geometry_base/geo.vert",
+        "../shaders/shader_file/geometry_base/geo.frag",
+        "../shaders/shader_file/geometry_base/house.geom");
+
+    scene.shader.emplace("base_shader", base_shader);
+    scene.shader.emplace("house_shader", house_shader);
+
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW); // 初始化数据
+
+    // 点位置
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    // 点颜色
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    return scene;
+}
+
+Scene gen_explode_model_scene()
+{
+    Scene scene;
+
+    // model 模型导入
+    scene.model_obj = Model("../models/backpack.obj");
+
+    Shader base_shader = Shader(
+        "../shaders/shader_file/geometry_base/model.vert",
+        "../shaders/shader_file/geometry_base/model.frag",
+        "../shaders/shader_file/geometry_base/explode.geom");
+
+    scene.shader.emplace("base_shader", base_shader);
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}
+
+Scene gen_visualize_model_normal_scene()
+{
+    Scene scene;
+
+    // model 模型导入
+    scene.model_obj = Model("../models/backpack.obj");
+
+    Shader visual_norm_shader = Shader(
+        "../shaders/shader_file/geometry_base/visual_norm.vert",
+        "../shaders/shader_file/geometry_base/visual_norm.frag",
+        "../shaders/shader_file/geometry_base/visual_norm.geom");
+
+    Shader base_shader = Shader(
+        "../shaders/shader_file/geometry_base/model.vert",
+        "../shaders/shader_file/geometry_base/model.frag");
+
+    scene.shader.emplace("visual_norm_shader", visual_norm_shader);
+    scene.shader.emplace("base_shader", base_shader);
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}

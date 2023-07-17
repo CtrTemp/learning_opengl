@@ -331,7 +331,6 @@ void scene_skybox_demo_loop(Scene scene)
 
     glm::mat4 model = glm::mat4(1.0f);
 
-
     /****************************** 绘制模型 ******************************/
     // 选定shader
     scene.shader["model_shader"].use();
@@ -344,8 +343,6 @@ void scene_skybox_demo_loop(Scene scene)
 
     scene.shader["model_shader"].setMat4("model", model);
     scene.model_obj.Draw(scene.shader["model_shader"]);
-
-
 
     /****************************** 绘制箱子 ******************************/
     // 箱子坐标与定义
@@ -385,7 +382,6 @@ void scene_skybox_demo_loop(Scene scene)
     }
     glBindVertexArray(0); // 解绑 VAO
 
-
     /****************************** 绘制 SkyBox ******************************/
     glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
     scene.shader["skybox_shader"].use();
@@ -401,4 +397,95 @@ void scene_skybox_demo_loop(Scene scene)
     glDepthFunc(GL_LESS); // set depth function back to default
 
     glBindVertexArray(0); // 解绑 VAO
+}
+
+void scene_geometry_shader_demo_loop(Scene scene)
+{
+
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 选定shader
+    // scene.shader["base_shader"].use();
+    scene.shader["house_shader"].use();
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    glDrawArrays(GL_POINTS, 0, 4);
+
+    glBindVertexArray(0); // 解绑 VAO
+}
+
+void scene_explode_model_demo_loop(Scene scene)
+{
+    // 模型绘制
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // don't forget to enable shader before setting uniforms
+    scene.shader["base_shader"].use();
+
+    // 根摄像机一同移动的聚光灯光源
+    scene.shader["base_shader"].setVec3("spotLight.position", primary_cam.cameraPos);
+    scene.shader["base_shader"].setVec3("spotLight.direction", primary_cam.cameraFront);
+    // 观察者位置传入
+    scene.shader["base_shader"].setVec3("viewPos", primary_cam.cameraPos);
+
+    // view/projection transformations
+    // 定义 MVP 变换阵并导入shader
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+
+    scene.shader["base_shader"].setMat4("model", model);
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+    scene.shader["base_shader"].setFloat("time", glfwGetTime()); // 爆炸分离的效果
+
+    scene.model_obj.Draw(scene.shader["base_shader"]);
+
+    glBindVertexArray(0); // 解除 VAO 绑定
+}
+
+void scene_visualize_model_normal_loop(Scene scene)
+{
+    // 模型绘制
+    glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 定义 MVP 变换阵并导入shader
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setMat4("model", model);
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+
+    scene.model_obj.Draw(scene.shader["base_shader"]);
+
+    scene.shader["visual_norm_shader"].use();
+    scene.shader["visual_norm_shader"].setMat4("model", model);
+    scene.shader["visual_norm_shader"].setMat4("view", view);
+    scene.shader["visual_norm_shader"].setMat4("projection", projection);
+
+    scene.model_obj.Draw(scene.shader["visual_norm_shader"]);
+
+    glBindVertexArray(0); // 解除 VAO 绑定
 }

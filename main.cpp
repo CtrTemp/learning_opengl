@@ -39,7 +39,10 @@ int main()
     // Scene cube_scene = gen_multi_rotating_cube_scene();
     // Scene light_scene = gen_lighting_scene();
     // Scene model_scene = gen_load_model_scene();
-    Scene skybox_scene = gen_skybox_scene();
+    // Scene skybox_scene = gen_skybox_scene();
+    // Scene geom_scene = gen_geometry_shader_scene();
+    // Scene explode_scene = gen_explode_model_scene();
+    Scene visual_norm_scene = gen_visualize_model_normal_scene();
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -51,8 +54,10 @@ int main()
         // multi_rotating_cube_demo_loop(cube_scene);
         // scene_light_demo_loop(light_scene);
         // scene_load_model_demo_loop(model_scene);
-        scene_skybox_demo_loop(skybox_scene);
-
+        // scene_skybox_demo_loop(skybox_scene);
+        // scene_geometry_shader_demo_loop(geom_scene);
+        // scene_explode_model_demo_loop(explode_scene);
+        scene_visualize_model_normal_loop(visual_norm_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

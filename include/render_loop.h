@@ -13,4 +13,10 @@ void scene_load_model_demo_loop(Scene scene);
 
 void scene_skybox_demo_loop(Scene scene);
 
+void scene_geometry_shader_demo_loop(Scene scene);
+
+void scene_explode_model_demo_loop(Scene scene);
+
+void scene_visualize_model_normal_loop(Scene scene);
+
 #endif

@@ -43,4 +43,10 @@ Scene gen_load_model_scene();
 
 Scene gen_skybox_scene();
 
+Scene gen_geometry_shader_scene();
+
+Scene gen_explode_model_scene();
+
+Scene gen_visualize_model_normal_scene();
+
 #endif
