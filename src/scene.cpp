@@ -396,3 +396,129 @@ Scene gen_load_model_scene()
 
     return scene;
 }
+
+float skyboxVertices[] = {
+    // positions
+    -1.0f, 1.0f, -1.0f,
+    -1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, 1.0f, -1.0f,
+    -1.0f, 1.0f, -1.0f,
+
+    -1.0f, -1.0f, 1.0f,
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, 1.0f, -1.0f,
+    -1.0f, 1.0f, -1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f, -1.0f, 1.0f,
+
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+
+    -1.0f, -1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, -1.0f, 1.0f,
+    -1.0f, -1.0f, 1.0f,
+
+    -1.0f, 1.0f, -1.0f,
+    1.0f, 1.0f, -1.0f,
+    1.0f, 1.0f, 1.0f,
+    1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f, 1.0f,
+    -1.0f, 1.0f, -1.0f,
+
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f, 1.0f,
+    1.0f, -1.0f, -1.0f,
+    1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f, 1.0f,
+    1.0f, -1.0f, 1.0f};
+
+Scene gen_skybox_scene()
+{
+    Scene scene;
+
+    // model 导入
+    scene.model_obj = Model("../models/backpack.obj");
+
+    Shader base_shader = Shader("../shaders/shader_file/skybox_base/base.vert", "../shaders/shader_file/skybox_base/base.frag");
+    Shader model_shader = Shader("../shaders/shader_file/skybox_base/model.vert", "../shaders/shader_file/skybox_base/model.frag");
+    Shader skybox_shader = Shader("../shaders/shader_file/skybox_base/sky.vert", "../shaders/shader_file/skybox_base/sky.frag");
+
+    scene.shader.emplace("base_shader", base_shader);
+    scene.shader.emplace("model_shader", model_shader);
+    scene.shader.emplace("skybox_shader", skybox_shader);
+
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 初始化数据
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+    scene.VAO.emplace("skybox_vao", 0);
+    scene.VBO.emplace("skybox_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["skybox_vao"]);
+    glBindVertexArray(scene.VAO["skybox_vao"]);
+
+    glGenBuffers(1, &scene.VBO["skybox_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["skybox_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW); // 初始化数据
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+    // 导入纹理
+    // Skybox 纹理
+    vector<std::string> faces = {
+        "../textures/skybox/left.jpg",
+        "../textures/skybox/right.jpg",
+        "../textures/skybox/top.jpg",
+        "../textures/skybox/bottom.jpg",
+        "../textures/skybox/front.jpg",
+        "../textures/skybox/back.jpg"};
+
+    unsigned int cubemapTexture = loadCubemap(faces);
+    scene.textures.emplace("cubemapTexture", cubemapTexture);
+
+    scene.shader["skybox_shader"].use();
+    scene.shader["skybox_shader"].setInt("cubemapTexture", 0);
+
+    // unsigned int box_texture = load_textures("../textures/box.png");
+    // scene.textures.emplace("box_texture", box_texture);
+
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setInt("cubemapTexture", 0);
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}

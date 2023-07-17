@@ -313,3 +313,92 @@ void scene_load_model_demo_loop(Scene scene)
 
     glBindVertexArray(0); // 解除 VAO 绑定
 }
+
+void scene_skybox_demo_loop(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 定义 MVP 变换阵 中的 view 和 project 变换阵一般是不变的，可以预先定义并设置
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+
+    /****************************** 绘制模型 ******************************/
+    // 选定shader
+    scene.shader["model_shader"].use();
+    scene.shader["model_shader"].setMat4("view", view);
+    scene.shader["model_shader"].setMat4("projection", projection);
+    scene.shader["model_shader"].setVec3("cameraPos", primary_cam.cameraPos); // 观察者方向
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));  // it's a bit too big for our scene, so scale it down
+
+    scene.shader["model_shader"].setMat4("model", model);
+    scene.model_obj.Draw(scene.shader["model_shader"]);
+
+
+
+    /****************************** 绘制箱子 ******************************/
+    // 箱子坐标与定义
+    vector<glm::vec3> cubePositions = {
+        glm::vec3(2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f, 2.0f, -2.5f),
+        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)};
+    // 选定shader
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+    scene.shader["base_shader"].setVec3("cameraPos", primary_cam.cameraPos); // 观察者方向
+
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    // texture 值
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["cubemapTexture"]);
+
+    for (unsigned int i = 0; i < cubePositions.size(); i++)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, cubePositions[i]);
+        float angle = 20.0f * (i + 1);
+        // // 静态 cube
+        // model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+        // 动态 cube
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angle), glm::vec3(0.5f, 1.0f, 0.0f));
+        scene.shader["base_shader"].setMat4("model", model);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    glBindVertexArray(0); // 解绑 VAO
+
+
+    /****************************** 绘制 SkyBox ******************************/
+    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    scene.shader["skybox_shader"].use();
+    // 这句很有意思～
+    view = glm::mat4(glm::mat3(glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp)));
+    scene.shader["skybox_shader"].setMat4("view", view);
+    scene.shader["skybox_shader"].setMat4("projection", projection);
+    // ... set view and projection matrix
+    glBindVertexArray(scene.VAO["skybox_vao"]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["cubemapTexture"]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthFunc(GL_LESS); // set depth function back to default
+
+    glBindVertexArray(0); // 解绑 VAO
+}

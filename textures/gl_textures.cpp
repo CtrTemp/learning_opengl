@@ -3,16 +3,24 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h" // header only lib 在源文件中导入
 
+// 全局 texture 变量
+vector<std::string> faces{
+    "right.jpg",
+    "left.jpg",
+    "top.jpg",
+    "bottom.jpg",
+    "front.jpg",
+    "back.jpg"};
+// unsigned int cubemapTexture = loadCubemap(faces);
+
 // 文中提到确实这样导入的纹理数据是上下颠倒的，，
 unsigned int load_textures(std::string texture_src)
 {
-
-
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    stbi_set_flip_vertically_on_load(true);  // 使用这个语句将在读入纹理时将其上下颠倒。
+    stbi_set_flip_vertically_on_load(true); // 使用这个语句将在读入纹理时将其上下颠倒。
     unsigned char *data = stbi_load(texture_src.c_str(), &width, &height, &nrComponents, 0);
     if (data)
     {
@@ -74,7 +82,6 @@ unsigned int load_textures(std::string texture_src)
 
 // }
 
-
 unsigned int TextureFromFile(const char *path, const string &directory, bool gamma)
 {
     string filename = string(path);
@@ -84,7 +91,7 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    stbi_set_flip_vertically_on_load(true);  // 使用这个语句将在读入纹理时将其上下颠倒。
+    stbi_set_flip_vertically_on_load(true); // 使用这个语句将在读入纹理时将其上下颠倒。
     unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
     if (data)
     {
@@ -112,6 +119,53 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
         std::cout << "Texture failed to load at path: " << path << std::endl;
         stbi_image_free(data);
     }
+
+    return textureID;
+}
+// loads a cubemap texture from 6 individual texture faces
+// order:
+// +X (right)
+// -X (left)
+// +Y (top)
+// -Y (bottom)
+// +Z (front)
+// -Z (back)
+// -------------------------------------------------------
+unsigned int loadCubemap(vector<std::string> faces)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+    int width, height, nrChannels;
+
+    for (unsigned int i = 0; i < faces.size(); i++)
+    {
+        if (i == 2 || i == 3)
+        {
+            stbi_set_flip_vertically_on_load(false); // 使用这个语句将在读入纹理时将其上下颠倒。
+        }
+        else
+        {
+            stbi_set_flip_vertically_on_load(false); 
+        }
+        unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data)
+        {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
     return textureID;
 }

@@ -41,4 +41,6 @@ Scene gen_lighting_scene();
 
 Scene gen_load_model_scene();
 
+Scene gen_skybox_scene();
+
 #endif

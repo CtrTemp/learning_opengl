@@ -104,9 +104,9 @@ void primary_mouse_scroll_callback(GLFWwindow *window, double xoffset, double yo
 void KeyBoard::keyboard_callback(GLFWwindow *window, Camera &cam)
 {
     // // middle speed
-    float cameraSpeed = 2.5f * deltaTime;
+    // float cameraSpeed = 2.5f * deltaTime;
     // fast speed
-    // float cameraSpeed = 5.0f * deltaTime;
+    float cameraSpeed = 5.0f * deltaTime;
 
     // Esc 用于退出绘制
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

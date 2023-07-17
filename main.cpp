@@ -36,9 +36,10 @@ int main()
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
 
     // // demo 场景生成
-    Scene cube_scene = gen_multi_rotating_cube_scene();
+    // Scene cube_scene = gen_multi_rotating_cube_scene();
     // Scene light_scene = gen_lighting_scene();
     // Scene model_scene = gen_load_model_scene();
+    Scene skybox_scene = gen_skybox_scene();
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -47,9 +48,10 @@ int main()
         primary_keyboard_callback(window, primary_cam);
 
         // demo 场景绘制
-        multi_rotating_cube_demo_loop(cube_scene);
+        // multi_rotating_cube_demo_loop(cube_scene);
         // scene_light_demo_loop(light_scene);
         // scene_load_model_demo_loop(model_scene);
+        scene_skybox_demo_loop(skybox_scene);
 
 
         glfwPollEvents();
