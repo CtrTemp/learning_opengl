@@ -314,6 +314,80 @@ void scene_load_model_demo_loop(Scene scene)
     glBindVertexArray(0); // 解除 VAO 绑定
 }
 
+void framebuffer_test_loop(Scene scene)
+{
+
+    // bind to framebuffer and draw scene as we normally would to color texture
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]);
+    glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
+
+    // make sure we clear the framebuffer's content
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 定义 MVP 变换阵 中的 view 和 project 变换阵一般是不变的，可以预先定义并设置
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    // 箱子坐标与定义
+    vector<glm::vec3> cubePositions = {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f, 2.0f, -2.5f),
+        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)};
+
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, scene.textures["transparent_texture"]);
+
+    /****************************** 绘制箱子 ******************************/
+    // 选定shader
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+    // texture 值
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["box_texture"]);
+
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    for (unsigned int i = 0; i < cubePositions.size(); i++)
+    {
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(model, cubePositions[i]);
+        float angle = 20.0f * i;
+        // 静态 cube
+        // model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+        // 动态 cube
+        // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+        scene.shader["base_shader"].setMat4("model", model);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+    }
+    glBindVertexArray(0); // 解绑 VAO
+
+    // now bind back to default framebuffer and draw a quad plane with the attached framebuffer color texture
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
+    // clear all relevant buffers
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    scene.shader["frame_shader"].use();
+    glBindVertexArray(scene.VAO["frame_vao"]);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_buffer_texture"]); // use the color attachment texture as the texture of the quad plane
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0); // 解绑 VAO
+}
+
 void scene_skybox_demo_loop(Scene scene)
 {
     // set clear frame color
@@ -589,4 +663,87 @@ void planet_demo_loop(Scene scene)
         glDrawElementsInstanced(GL_TRIANGLES, static_cast<unsigned int>(scene.model_obj["rock"].meshes[i].indices.size()), GL_UNSIGNED_INT, 0, 5000);
         glBindVertexArray(0);
     }
+}
+
+void MSAA_demo_loop(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // view/projection transformations
+    // 定义 MVP 变换阵并导入shader
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 1000.0f);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+    model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));     // it's a bit too big for our scene, so scale it down
+
+    // Draw the planet
+    scene.shader["base_shader"].use();
+
+    scene.shader["base_shader"].setMat4("model", model);
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+
+    glBindVertexArray(scene.VAO["base_vao"]); // 绑定 VAO
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0); // 解绑 VAO
+}
+
+void offscreen_MSAA_loop(Scene scene)
+{
+    // render
+    // ------
+    // 1. draw scene as normal in multisampled buffers
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    // view/projection transformations
+    // 定义 MVP 变换阵并导入shader
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 1000.0f);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+
+    // set transformation matrices
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setMat4("model", model);
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+
+    glBindVertexArray(scene.VAO["base_vao"]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0); 
+
+    // 2. now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.FBO["base_fbo"]);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene.FBO["intermediate_fbo"]);
+    glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    // 3. now render quad with scene's visuals as its texture image
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
+
+    // draw Screen quad
+    scene.shader["frame_shader"].use();
+    glBindVertexArray(scene.VAO["frame_vao"]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]); // use the now resolved color attachment as the quad's texture
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }

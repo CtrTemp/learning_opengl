@@ -105,12 +105,12 @@ void KeyBoard::keyboard_callback(GLFWwindow *window, Camera &cam)
 {
     // // middle speed
     // float cameraSpeed = 2.5f * deltaTime;
-    // // fast speed
-    // float cameraSpeed = 5.0f * deltaTime;
+    // fast speed
+    float cameraSpeed = 5.0f * deltaTime;
     // // vary fast speed
     // float cameraSpeed = 15.0f * deltaTime;
-    // hyper fast speed
-    float cameraSpeed = 50.0f * deltaTime;
+    // // hyper fast speed
+    // float cameraSpeed = 50.0f * deltaTime;
 
 
     // Esc 用于退出绘制

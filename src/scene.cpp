@@ -397,6 +397,130 @@ Scene gen_load_model_scene()
     return scene;
 }
 
+float quadVertices1[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+    // positions   // texCoords
+    -1.0f, 1.0f, 0.0f, 1.0f,
+    -1.0f, -1.0f, 0.0f, 0.0f,
+    1.0f, -1.0f, 1.0f, 0.0f,
+
+    -1.0f, 1.0f, 0.0f, 1.0f,
+    1.0f, -1.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 1.0f, 1.0f};
+
+Scene gen_framebuffer_scene()
+{
+    Scene scene;
+    glEnable(GL_DEPTH_TEST);
+    Shader base_shader = Shader(
+        "../shaders/shader_file/framebuffer_base/base.vert",
+        "../shaders/shader_file/framebuffer_base/base.frag");
+    Shader frame_shader = Shader(
+        "../shaders/shader_file/framebuffer_base/frame.vert",
+        "../shaders/shader_file/framebuffer_base/frame.frag");
+
+    scene.shader.emplace("base_shader", base_shader);
+    scene.shader.emplace("frame_shader", frame_shader);
+
+    // Cubes VAO
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 初始化数据
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    // Screen quad VAO
+    scene.VAO.emplace("frame_vao", 0);
+    scene.VBO.emplace("frame_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["frame_vao"]);
+    glBindVertexArray(scene.VAO["frame_vao"]);
+
+    glGenBuffers(1, &scene.VBO["frame_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["frame_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices1), quadVertices1, GL_STATIC_DRAW); // 初始化数据
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+
+    // Load Textures
+    unsigned int box_texture = load_textures("../textures/box.png");
+
+    scene.textures.emplace("box_texture", box_texture);
+
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setInt("box_texture", 0);
+
+    scene.shader["frame_shader"].use();
+    scene.shader["frame_shader"].setInt("frame_buffer_texture", 0);
+
+    scene.FBO.emplace("base_fbo", 0); // 这次尝试创建一个 Frame Buffer Objcet
+    glGenFramebuffers(1, &scene.FBO["base_fbo"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]); // 绑定 frame buffer，之后所有的读写缓冲操作都会影响这个 frame buffer
+
+    // 这里要为 frame buffer 添加一个纹理附件，其作用是将渲染结果都写入这个纹理附件，之后可以直接渲染到屏幕？
+    // 注意这个纹理福建的大小和窗口大小是一致的
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    scene.textures.emplace("frame_buffer_texture", texture);
+
+    // 最后的 NULL 表示我们不去填充这个纹理内存数据，这部分要等到渲染阶段进行填充
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    // 将纹理附件添加到 frame buffer 上
+    // 参数01：target：我们所创建的帧缓冲的目标类型
+    // 参数02：attachement：要添加的附件类型，GL_COLOR_ATTACHMENT0表示是第0个图像纹理，这里应该还可以设为深度缓冲？
+    // 参数03：textarget：希望添加的纹理类型
+    // 参数04：texture：添加的纹理实例
+    // 参数05：level：MipMap的等级，这里暂时设为0（应该表示的是最高等级）
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+    // // 以下以单独纹理的方式，同时附加深度缓冲纹理 和 模板缓冲纹理
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, primary_cam.frame_width, primary_cam.frame_height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
+
+    scene.RBO.emplace("base_rbo", 0); // 这次尝试创建一个 Render Buffer Objcet
+    glGenFramebuffers(1, &scene.RBO["base_rbo"]);
+    glBindFramebuffer(GL_RENDERBUFFER, scene.RBO["base_rbo"]); // 绑定 render buffer，之后的渲染操作都会影响到
+
+    // 创建一个深度和模板缓冲对象，并将其作为附件绑定到 RBO 上
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, primary_cam.frame_width, primary_cam.frame_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["base_rbo"]);
+
+    // 附件绑定情况测试
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // FBO 解绑
+
+    // // Other render option
+    // glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // // 使用线框模式进行绘制
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // // 使用默认模式绘制几何
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}
+
 float skyboxVertices[] = {
     // positions
     -1.0f, 1.0f, -1.0f,
@@ -786,7 +910,6 @@ Scene gen_mars_simu_scene()
         modelMatrices[i] = model;
     }
 
-
     // configure instanced array
     // -------------------------
     unsigned int buffer;
@@ -804,13 +927,13 @@ Scene gen_mars_simu_scene()
         glBindVertexArray(VAO);
         // set attribute pointers for matrix (4 times vec4)
         glEnableVertexAttribArray(3);
-        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+        glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)0);
         glEnableVertexAttribArray(4);
-        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+        glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(sizeof(glm::vec4)));
         glEnableVertexAttribArray(5);
-        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+        glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(2 * sizeof(glm::vec4)));
         glEnableVertexAttribArray(6);
-        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+        glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(3 * sizeof(glm::vec4)));
 
         glVertexAttribDivisor(3, 1);
         glVertexAttribDivisor(4, 1);
@@ -827,6 +950,189 @@ Scene gen_mars_simu_scene()
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     // 使用默认模式绘制几何
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    return scene;
+}
+
+Scene gen_default_MSAA_scene()
+{
+    primary_cam.cameraPos = glm::vec3(2.0f, 2.0f, 4.0f);
+    // // 指定 MSAA 超采样个数 （注意这个必须在窗口创建前进行设置，在这里不行）
+    // glfwWindowHint(GLFW_SAMPLES, 4);
+
+    Scene scene;
+
+    Shader base_shader = Shader("../shaders/shader_file/MSAA_base/base.vert", "../shaders/shader_file/MSAA_base/base.frag");
+    scene.shader.emplace("base_shader", base_shader);
+
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点颜色
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    // 顶点纹理坐标
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // 开启 MSAA
+    glEnable(GL_MULTISAMPLE);
+
+    return scene;
+}
+
+Scene gen_offscreen_MSAA_scene()
+{
+    primary_cam.cameraPos = glm::vec3(2.0f, 2.0f, 4.0f);
+    // // 指定 MSAA 超采样个数 （注意这个必须在窗口创建前进行设置，在这里不行）
+    // glfwWindowHint(GLFW_SAMPLES, 4);
+
+    Scene scene;
+
+    Shader base_shader = Shader(
+        "../shaders/shader_file/MSAA_base/base.vert",
+        "../shaders/shader_file/MSAA_base/base.frag");
+    scene.shader.emplace("base_shader", base_shader);
+
+    Shader frame_shader = Shader(
+        "../shaders/shader_file/MSAA_base/frame.vert",
+        "../shaders/shader_file/MSAA_base/frame.frag");
+    scene.shader.emplace("base_shader", frame_shader);
+
+    scene.VAO.emplace("base_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["base_vao"]);
+    glBindVertexArray(scene.VAO["base_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点颜色
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    // 顶点纹理坐标
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+
+    // Screen quad VAO
+    scene.VAO.emplace("frame_vao", 0);
+    scene.VBO.emplace("frame_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["frame_vao"]);
+    glBindVertexArray(scene.VAO["frame_vao"]);
+
+    glGenBuffers(1, &scene.VBO["frame_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["frame_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices1), quadVertices1, GL_STATIC_DRAW); // 初始化数据
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    // configure MSAA framebuffer
+    // --------------------------
+    scene.FBO.emplace("base_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["base_fbo"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]);
+    // create a multisampled color attachment texture
+
+    // Void Texture for frame buffer
+    unsigned int textureColorBufferMultiSampled;
+    glGenTextures(1, &textureColorBufferMultiSampled);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, primary_cam.frame_width, primary_cam.frame_height, GL_TRUE);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled, 0);
+    scene.textures.emplace("frame_buffer_texture", textureColorBufferMultiSampled);
+
+    // create a (also multisampled) renderbuffer object for depth and stencil attachments
+    scene.RBO.emplace("base_rbo", 0);
+    glGenRenderbuffers(1, &scene.RBO["base_rbo"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["base_rbo"]);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, primary_cam.frame_width, primary_cam.frame_height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["base_rbo"]);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // configure second post-processing framebuffer
+    scene.FBO.emplace("intermediate_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["intermediate_fbo"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["intermediate_fbo"]);
+
+    // create a color attachment texture
+    unsigned int screenTexture;
+    glGenTextures(1, &screenTexture);
+    glBindTexture(GL_TEXTURE_2D, screenTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0); // we only need a color buffer
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Intermediate framebuffer is not complete!" << endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    scene.shader["frame_shader"].use();
+    scene.shader["frame_shader"].setInt("screenTexture", 0);
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // // 开启 MSAA
+    // glEnable(GL_MULTISAMPLE);
 
     return scene;
 }

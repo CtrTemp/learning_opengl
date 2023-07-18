@@ -24,6 +24,8 @@ public:
     glm::vec4 background;
     std::unordered_map<std::string, unsigned int> VAO;
     std::unordered_map<std::string, unsigned int> VBO;
+    std::unordered_map<std::string, unsigned int> FBO; // Frame Buffer Object
+    std::unordered_map<std::string, unsigned int> RBO; // Render Buffer Object
     unsigned int EBO;
     glm::mat4 trans;
     glm::mat4 model;
@@ -41,6 +43,8 @@ Scene gen_lighting_scene();
 
 Scene gen_load_model_scene();
 
+Scene gen_framebuffer_scene();
+
 Scene gen_skybox_scene();
 
 Scene gen_geometry_shader_scene();
@@ -54,5 +58,9 @@ Scene gen_render_instance_scene();
 Scene gen_render_instance_scene_opt();
 
 Scene gen_mars_simu_scene();
+
+Scene gen_default_MSAA_scene();
+
+Scene gen_offscreen_MSAA_scene();
 
 #endif

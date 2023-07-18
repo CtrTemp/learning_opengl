@@ -11,6 +11,8 @@ void scene_light_demo_loop(Scene scene);
 
 void scene_load_model_demo_loop(Scene scene);
 
+void framebuffer_test_loop(Scene scene);
+
 void scene_skybox_demo_loop(Scene scene);
 
 void scene_geometry_shader_demo_loop(Scene scene);
@@ -24,5 +26,9 @@ void rendering_instance_demo_loop(Scene scene);
 void rendering_instance_demo_loop_opt(Scene scene);
 
 void planet_demo_loop(Scene scene);
+
+void MSAA_demo_loop(Scene scene);
+
+void offscreen_MSAA_loop(Scene scene);
 
 #endif

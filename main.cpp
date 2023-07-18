@@ -11,6 +11,8 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    // // 指定 MSAA 超采样个数 （使用offline方法的时候请注释掉以下的语句）
+    // glfwWindowHint(GLFW_SAMPLES, 4);
 
     // create window instance
     GLFWwindow *window = glfwCreateWindow(primary_cam.frame_width, primary_cam.frame_height, "LearnOpenGL", NULL, NULL);
@@ -39,13 +41,17 @@ int main()
     // Scene cube_scene = gen_multi_rotating_cube_scene();
     // Scene light_scene = gen_lighting_scene();
     // Scene model_scene = gen_load_model_scene();
+    // Scene framebuffer_scene = gen_framebuffer_scene();
     // Scene skybox_scene = gen_skybox_scene();
     // Scene geom_scene = gen_geometry_shader_scene();
     // Scene explode_scene = gen_explode_model_scene();
     // Scene visual_norm_scene = gen_visualize_model_normal_scene();
     // Scene multi_instance_scene = gen_render_instance_scene();
     // Scene multi_instance_scene_opt = gen_render_instance_scene_opt();
-    Scene planet_scene = gen_mars_simu_scene();
+    // Scene planet_scene = gen_mars_simu_scene();
+    // Scene MSAA_scene = gen_default_MSAA_scene();
+    Scene offscreen_MSAA_scene = gen_offscreen_MSAA_scene();
+    
     
     
 
@@ -59,13 +65,16 @@ int main()
         // multi_rotating_cube_demo_loop(cube_scene);
         // scene_light_demo_loop(light_scene);
         // scene_load_model_demo_loop(model_scene);
+        // framebuffer_test_loop(framebuffer_scene);
         // scene_skybox_demo_loop(skybox_scene);
         // scene_geometry_shader_demo_loop(geom_scene);
         // scene_explode_model_demo_loop(explode_scene);
         // scene_visualize_model_normal_loop(visual_norm_scene);
         // rendering_instance_demo_loop(multi_instance_scene);
         // rendering_instance_demo_loop_opt(multi_instance_scene_opt);
-        planet_demo_loop(planet_scene);
+        // planet_demo_loop(planet_scene);
+        // MSAA_demo_loop(MSAA_scene);
+        offscreen_MSAA_loop(offscreen_MSAA_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
