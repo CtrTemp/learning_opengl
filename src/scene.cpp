@@ -410,7 +410,6 @@ float quadVertices1[] = { // vertex attributes for a quad that fills the entire 
 Scene gen_framebuffer_scene()
 {
     Scene scene;
-    glEnable(GL_DEPTH_TEST);
     Shader base_shader = Shader(
         "../shaders/shader_file/framebuffer_base/base.vert",
         "../shaders/shader_file/framebuffer_base/base.frag");
@@ -421,7 +420,7 @@ Scene gen_framebuffer_scene()
     scene.shader.emplace("base_shader", base_shader);
     scene.shader.emplace("frame_shader", frame_shader);
 
-    // Cubes VAO
+    /**************************** Cubes Initialization ****************************/
     scene.VAO.emplace("base_vao", 0);
     scene.VBO.emplace("base_vbo", 0);
 
@@ -439,7 +438,15 @@ Scene gen_framebuffer_scene()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
     glEnableVertexAttribArray(2);
 
-    // Screen quad VAO
+    // Load Textures
+    unsigned int box_texture = load_textures("../textures/box.png");
+
+    scene.textures.emplace("box_texture", box_texture);
+
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setInt("box_texture", 0);
+
+    /**************************** Screen quad Initialization ****************************/
     scene.VAO.emplace("frame_vao", 0);
     scene.VBO.emplace("frame_vbo", 0);
 
@@ -455,68 +462,81 @@ Scene gen_framebuffer_scene()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 
-    // Load Textures
-    unsigned int box_texture = load_textures("../textures/box.png");
-
-    scene.textures.emplace("box_texture", box_texture);
-
-    scene.shader["base_shader"].use();
-    scene.shader["base_shader"].setInt("box_texture", 0);
-
     scene.shader["frame_shader"].use();
-    scene.shader["frame_shader"].setInt("frame_buffer_texture", 0);
 
-    scene.FBO.emplace("base_fbo", 0); // 这次尝试创建一个 Frame Buffer Objcet
+    // 创建一个 Frame Buffer Objcet
+    scene.FBO.emplace("base_fbo", 0);
     glGenFramebuffers(1, &scene.FBO["base_fbo"]);
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]); // 绑定 frame buffer，之后所有的读写缓冲操作都会影响这个 frame buffer
 
-    // 这里要为 frame buffer 添加一个纹理附件，其作用是将渲染结果都写入这个纹理附件，之后可以直接渲染到屏幕？
-    // 注意这个纹理福建的大小和窗口大小是一致的
+    // 这里要为 frame buffer 添加一个纹理附件，纹理附件不需要填充一个特定的纹理，它的作用是用于承接之后的写入
     unsigned int texture;
+
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-
-    scene.textures.emplace("frame_buffer_texture", texture);
-
-    // 最后的 NULL 表示我们不去填充这个纹理内存数据，这部分要等到渲染阶段进行填充
+    // 在GPU上创建这个纹理，保证纹理的长宽和屏幕一致即可。 最后的 NULL 表示我们不去填充这个纹理内存数据，这部分要等到渲染阶段进行填充
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0); // 解绑作为颜色附件的 texture
 
-    // 将纹理附件添加到 frame buffer 上
+    scene.textures.emplace("screenTexture", texture);
+    scene.shader["frame_shader"].setInt("screenTexture", 0); // 注意要先设置纹理，后加入哈希表
+
+    /**
+     *      作为 GL_COLOR_ATTACHMENT0 将纹理附件添加到 frame buffer object 上
+     *      注意， frame buffer object 成功创建的必要条件之一就是必须要有添加到他上面的附件，这个附件可以是一个颜色缓冲/模板缓冲/深度缓冲，
+     * 下面添加一个颜色缓冲附件。
+     *      在之后的渲染循环中，当绑定FBO后，所有的绘制操作/命令都将结果渲染到以下的颜色附件中（也就是你添加到上面的纹理，你是以颜色缓冲附件的
+     * 形式添加的纹理）。
+     * */
+    //
     // 参数01：target：我们所创建的帧缓冲的目标类型
     // 参数02：attachement：要添加的附件类型，GL_COLOR_ATTACHMENT0表示是第0个图像纹理，这里应该还可以设为深度缓冲？
     // 参数03：textarget：希望添加的纹理类型
-    // 参数04：texture：添加的纹理实例
+    // 参数04：texture：添加的纹理实例ID
     // 参数05：level：MipMap的等级，这里暂时设为0（应该表示的是最高等级）
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-    // // 以下以单独纹理的方式，同时附加深度缓冲纹理 和 模板缓冲纹理
-    // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, primary_cam.frame_width, primary_cam.frame_height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
 
-    scene.RBO.emplace("base_rbo", 0); // 这次尝试创建一个 Render Buffer Objcet
-    glGenFramebuffers(1, &scene.RBO["base_rbo"]);
-    glBindFramebuffer(GL_RENDERBUFFER, scene.RBO["base_rbo"]); // 绑定 render buffer，之后的渲染操作都会影响到
+    /**
+     *      创建一个 Render Buffer Objcet
+     *      注意，Render Buffer Objcet也是 Frame Buffer Objcet 的一个附件，这样做好处是他存储的是原生的渲染数据，没有作数据优化，
+     * 所以 offscreen 渲染后可以直接读取并传送到屏幕，中间不用做数据转换，这使得对RBO的操作十分迅速！
+     *      这个RBO对象是Write Only的，所以常常被作为深度/模板缓冲附件被添加。这是因为大多数时候，我们不需要对深度/模板缓冲区进行读取
+     * 但仍关心深度测试/模板测试。
+     *
+     * */
+    scene.RBO.emplace("base_rbo", 0);
+    glGenRenderbuffers(1, &scene.RBO["base_rbo"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["base_rbo"]); // 绑定 render buffer，之后的渲染操作都会影响到
 
-    // 创建一个深度和模板缓冲对象，并将其作为附件绑定到 RBO 上
+    /**
+     *      在GPU端创建一个Render Buffer Object，
+     *  GL_DEPTH24_STENCIL8 应该表示的是我们总共有32位数据宽度来存储深度值和模板值，我们将24位分配给深度值存储，8位分配给模板值存储
+     * */
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, primary_cam.frame_width, primary_cam.frame_height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0); // 解绑作为深度/模板附件的 RBO
+
+    // 将 RBO 作为深度/模板缓冲附件绑定到 Frame Buffer Objcet 上
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["base_rbo"]);
 
-    // 附件绑定情况测试
+    // check FBO 是否完备
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
     }
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // FBO 解绑
 
-    // // Other render option
-    // glEnable(GL_DEPTH_TEST); // enable depth test
+    /**
+     *  经过以上，我们已经创建了一个FBO。并且为其添加了两种附件使其变得完备：
+     *  1、一个空的 texture 作为颜色缓冲附件，我们最终在FBO上执行渲染操作后的结果将被写入到这个附件中
+     *  2、一个render buffer object作为深度/模板缓冲附件，它使得我们的FBO可以进行深度/模板测试
+     * */
 
-    // // 使用线框模式进行绘制
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    // // 使用默认模式绘制几何
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 
     return scene;
 }
@@ -1172,7 +1192,7 @@ Scene gen_test_Blinn_Phong_scene()
 
     // 顶点纹理坐标
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
-    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
 
     // 场景物体材质导入
     scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
@@ -1180,11 +1200,9 @@ Scene gen_test_Blinn_Phong_scene()
     scene.shader["obj_shader"].setFloat("material.shininess", shininess_item);
 
     // 导入纹理
-    unsigned int viking_texture = load_textures("../textures/viking_room.png");
-    unsigned int frame_texture = load_textures("../textures/rect.jpeg");
+    unsigned int floor_texture = load_textures("../textures/floor.jpg");
 
-    scene.textures.emplace("viking_texture", viking_texture);
-    scene.textures.emplace("frame_texture", frame_texture);
+    scene.textures.emplace("floor_texture", floor_texture);
 
     scene.shader["obj_shader"].setInt("material.diffuse", 0);
     scene.shader["obj_shader"].setInt("material.specular", 1);
@@ -1253,28 +1271,11 @@ Scene gen_test_Blinn_Phong_scene()
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
     // Other render option
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
-
-    // depth test
-    glEnable(GL_DEPTH_TEST); // enable depth test
-    // glDepthFunc(GL_ALWAYS);  // 永远都会通过深度测试，也就是说后被渲染的无论如何都会被保留下来
-    // glDepthFunc(GL_NEVER);   // 永远不会通过深度测试，屏幕一片黑，，，
-    glDepthFunc(GL_LESS); // default ： 这将丢弃深度值高于或等于当前深度缓冲区的值的片段
-
-    // stencil test
-    glEnable(GL_STENCIL_TEST); // enable stencil test 如果使能了模板缓冲，必须在绘制循环开始前将其清空
-    // 定义何时更新模板函数：
-    // 参数1：GL_NOTEQUAL：当现有模板值与新的模板值不相等时进行更新
-    // 参数2：ref：更新时，模板值将被更新为什么？
-    // 参数3：mask：更新值将会取与mask进行AND位操作后得到的值
-    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-    // 更新时的行为：
-    // 参数1：GL_KEEP：模板测试不通过时保留原来的模板值
-    // 参数2：GL_KEEP：深度测试不通过时保留原来的模板值
-    // 参数3：GL_REPLACE：深度测试、模板测试均通过时将 glStencilFunc 中设置的第二参数ref值替换旧的模板值
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     return scene;
 }

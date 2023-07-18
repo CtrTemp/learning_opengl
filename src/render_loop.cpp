@@ -316,10 +316,12 @@ void scene_load_model_demo_loop(Scene scene)
 
 void framebuffer_test_loop(Scene scene)
 {
-
-    // bind to framebuffer and draw scene as we normally would to color texture
+    /**
+     *  改变窗口的默认 frame buffer 的绑定，将其绑定到我们创建的 Frame Buffer Object
+     * 之后我们的渲染指令操作的结果都将被绘制到该FBO的颜色附件上
+     * */
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]);
-    glEnable(GL_DEPTH_TEST); // enable depth testing (is disabled for rendering screen-space quad)
+    glEnable(GL_DEPTH_TEST); // 这里我们使能深度测试针对的是我们创建的FBO
 
     // make sure we clear the framebuffer's content
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -344,9 +346,6 @@ void framebuffer_test_loop(Scene scene)
         glm::vec3(1.5f, 2.0f, -2.5f),
         glm::vec3(1.5f, 0.2f, -1.5f),
         glm::vec3(-1.3f, 1.0f, -1.5f)};
-
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, scene.textures["transparent_texture"]);
 
     /****************************** 绘制箱子 ******************************/
     // 选定shader
@@ -373,19 +372,28 @@ void framebuffer_test_loop(Scene scene)
     }
     glBindVertexArray(0); // 解绑 VAO
 
-    // now bind back to default framebuffer and draw a quad plane with the attached framebuffer color texture
+    /**
+     *  切换回窗口默认的Frame Buffer
+     * */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDisable(GL_DEPTH_TEST); // disable depth test so screen-space quad isn't discarded due to depth test.
-    // clear all relevant buffers
+    glDisable(GL_DEPTH_TEST); // 失能窗口默认 Frame Buffer 的深度测试，所以后被绘制的总会被呈现在窗口的最前面
+    // 清空当前的 Frame Buffer 设为全白
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
     glClear(GL_COLOR_BUFFER_BIT);
-
+    
+    // 切换专门绘制 texture 平面图的 shader
     scene.shader["frame_shader"].use();
-    glBindVertexArray(scene.VAO["frame_vao"]);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_buffer_texture"]); // use the color attachment texture as the texture of the quad plane
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(scene.VAO["frame_vao"]); // 绑定对应 VAO
+    // glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]); // use the color attachment texture as the texture of the quad plane
+    
+    
+    // 激活 texture 值
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]);
+    glDrawArrays(GL_TRIANGLES, 0, 36); // 绘制 texture 
 
     glBindVertexArray(0); // 解绑 VAO
+    
 }
 
 void scene_skybox_demo_loop(Scene scene)
@@ -754,9 +762,7 @@ void blinn_phong_demo_loop(Scene scene)
     glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
     // glClear(GL_COLOR_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
-    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制（如果使能了模板缓冲，必须在绘制循环开始前将其清空）
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // 定义 MVP 变换阵
     glm::mat4 model = glm::mat4(1.0f);
@@ -773,18 +779,11 @@ void blinn_phong_demo_loop(Scene scene)
     scene.shader["obj_shader"].setMat4("view", view);
     scene.shader["obj_shader"].setMat4("projection", projection);
 
-    // 根摄像机一同移动的聚光灯光源
-    scene.shader["obj_shader"].setVec3("spotLight.position", primary_cam.cameraPos);
-    scene.shader["obj_shader"].setVec3("spotLight.direction", primary_cam.cameraFront);
     // 观察者位置（相机位置）
     scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
 
-    scene.shader["obj_shader"].use(); // 首先使用正常的 shader 对物体进行一次绘制
-
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["viking_texture"]);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_texture"]);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["floor_texture"]);
 
     glBindVertexArray(scene.VAO["obj_vao"]); // 绑定VAO准备开始渲染物体
 

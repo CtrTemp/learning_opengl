@@ -41,7 +41,7 @@ int main()
     // Scene cube_scene = gen_multi_rotating_cube_scene();
     // Scene light_scene = gen_lighting_scene();
     // Scene model_scene = gen_load_model_scene();
-    // Scene framebuffer_scene = gen_framebuffer_scene();
+    Scene framebuffer_scene = gen_framebuffer_scene();
     // Scene skybox_scene = gen_skybox_scene();
     // Scene geom_scene = gen_geometry_shader_scene();
     // Scene explode_scene = gen_explode_model_scene();
@@ -51,7 +51,7 @@ int main()
     // Scene planet_scene = gen_mars_simu_scene();
     // Scene MSAA_scene = gen_default_MSAA_scene();
     // Scene offscreen_MSAA_scene = gen_offscreen_MSAA_scene();
-    Scene blinn_phong_scene = gen_test_Blinn_Phong_scene();
+    // Scene blinn_phong_scene = gen_test_Blinn_Phong_scene();
     
     
     
@@ -67,7 +67,7 @@ int main()
         // multi_rotating_cube_demo_loop(cube_scene);
         // scene_light_demo_loop(light_scene);
         // scene_load_model_demo_loop(model_scene);
-        // framebuffer_test_loop(framebuffer_scene);
+        framebuffer_test_loop(framebuffer_scene);
         // scene_skybox_demo_loop(skybox_scene);
         // scene_geometry_shader_demo_loop(geom_scene);
         // scene_explode_model_demo_loop(explode_scene);
@@ -77,7 +77,7 @@ int main()
         // planet_demo_loop(planet_scene);
         // MSAA_demo_loop(MSAA_scene);
         // offscreen_MSAA_loop(offscreen_MSAA_scene);
-        blinn_phong_demo_loop(blinn_phong_scene);
+        // blinn_phong_demo_loop(blinn_phong_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
