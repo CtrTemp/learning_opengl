@@ -727,7 +727,7 @@ void offscreen_MSAA_loop(Scene scene)
 
     glBindVertexArray(scene.VAO["base_vao"]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
     // 2. now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
     glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.FBO["base_fbo"]);
@@ -746,4 +746,57 @@ void offscreen_MSAA_loop(Scene scene)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]); // use the now resolved color attachment as the quad's texture
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void blinn_phong_demo_loop(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制（如果使能了模板缓冲，必须在绘制循环开始前将其清空）
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    // 定义 MVP 变换阵
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    /******************************** 绘制物体 ********************************/
+
+    // 先将 view 和 projection 两个矩阵导入 shader
+
+    scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
+    scene.shader["obj_shader"].setMat4("view", view);
+    scene.shader["obj_shader"].setMat4("projection", projection);
+
+    // 根摄像机一同移动的聚光灯光源
+    scene.shader["obj_shader"].setVec3("spotLight.position", primary_cam.cameraPos);
+    scene.shader["obj_shader"].setVec3("spotLight.direction", primary_cam.cameraFront);
+    // 观察者位置（相机位置）
+    scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
+
+    scene.shader["obj_shader"].use(); // 首先使用正常的 shader 对物体进行一次绘制
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["viking_texture"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["frame_texture"]);
+
+    glBindVertexArray(scene.VAO["obj_vao"]); // 绑定VAO准备开始渲染物体
+
+    model = glm::mat4(1.0f);
+
+    // // 动态 cube （静态CUBE直接注销这句即可）
+    // float angel = 20.0f * (i + 1);
+    // model = glm::rotate(model, (float)glfwGetTime() * glm::radians(angel), glm::vec3(0.5f, 1.0f, 0.0f));
+    // // 旋转特定角度
+    // model = glm::rotate(model, 1 * glm::radians(angel), glm::vec3(1.0f, 0.3f, 0.5f));
+    scene.shader["obj_shader"].setMat4("model", model);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glBindVertexArray(0); // 解除 VAO 绑定
 }

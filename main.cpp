@@ -50,7 +50,9 @@ int main()
     // Scene multi_instance_scene_opt = gen_render_instance_scene_opt();
     // Scene planet_scene = gen_mars_simu_scene();
     // Scene MSAA_scene = gen_default_MSAA_scene();
-    Scene offscreen_MSAA_scene = gen_offscreen_MSAA_scene();
+    // Scene offscreen_MSAA_scene = gen_offscreen_MSAA_scene();
+    Scene blinn_phong_scene = gen_test_Blinn_Phong_scene();
+    
     
     
     
@@ -74,7 +76,8 @@ int main()
         // rendering_instance_demo_loop_opt(multi_instance_scene_opt);
         // planet_demo_loop(planet_scene);
         // MSAA_demo_loop(MSAA_scene);
-        offscreen_MSAA_loop(offscreen_MSAA_scene);
+        // offscreen_MSAA_loop(offscreen_MSAA_scene);
+        blinn_phong_demo_loop(blinn_phong_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

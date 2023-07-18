@@ -31,4 +31,6 @@ void MSAA_demo_loop(Scene scene);
 
 void offscreen_MSAA_loop(Scene scene);
 
+void blinn_phong_demo_loop(Scene scene);
+
 #endif

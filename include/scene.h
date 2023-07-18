@@ -63,4 +63,5 @@ Scene gen_default_MSAA_scene();
 
 Scene gen_offscreen_MSAA_scene();
 
+Scene gen_test_Blinn_Phong_scene();
 #endif
