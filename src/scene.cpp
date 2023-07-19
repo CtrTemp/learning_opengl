@@ -541,6 +541,7 @@ Scene gen_framebuffer_scene()
     return scene;
 }
 
+
 float skyboxVertices[] = {
     // positions
     -1.0f, 1.0f, -1.0f,
@@ -1036,10 +1037,10 @@ Scene gen_offscreen_MSAA_scene()
         "../shaders/shader_file/MSAA_base/base.frag");
     scene.shader.emplace("base_shader", base_shader);
 
-    Shader frame_shader = Shader(
+    Shader quad_shader = Shader(
         "../shaders/shader_file/MSAA_base/frame.vert",
         "../shaders/shader_file/MSAA_base/frame.frag");
-    scene.shader.emplace("base_shader", frame_shader);
+    scene.shader.emplace("quad_shader", quad_shader);
 
     scene.VAO.emplace("base_vao", 0);
     scene.VBO.emplace("base_vbo", 0);
@@ -1066,14 +1067,14 @@ Scene gen_offscreen_MSAA_scene()
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
     // Screen quad VAO
-    scene.VAO.emplace("frame_vao", 0);
-    scene.VBO.emplace("frame_vbo", 0);
+    scene.VAO.emplace("quad_vao", 0);
+    scene.VBO.emplace("quad_vbo", 0);
 
-    glGenVertexArrays(1, &scene.VAO["frame_vao"]);
-    glBindVertexArray(scene.VAO["frame_vao"]);
+    glGenVertexArrays(1, &scene.VAO["quad_vao"]);
+    glBindVertexArray(scene.VAO["quad_vao"]);
 
-    glGenBuffers(1, &scene.VBO["frame_vbo"]);
-    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["frame_vbo"]);
+    glGenBuffers(1, &scene.VBO["quad_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["quad_vbo"]);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices1), quadVertices1, GL_STATIC_DRAW); // 初始化数据
 
     glEnableVertexAttribArray(0);
@@ -1081,34 +1082,36 @@ Scene gen_offscreen_MSAA_scene()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 
+
     // configure MSAA framebuffer
     // --------------------------
-    scene.FBO.emplace("base_fbo", 0);
-    glGenFramebuffers(1, &scene.FBO["base_fbo"]);
-    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]);
-    // create a multisampled color attachment texture
+    // 首先创建 MSAA 对应的 Frame Buffer Object
+    scene.FBO.emplace("MSAA_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["MSAA_fbo"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["MSAA_fbo"]);
 
-    // Void Texture for frame buffer
+    // 创建空纹理，作为 FBO 的颜色缓冲附件，注意纹理要先配置好，再加入哈希表
     unsigned int textureColorBufferMultiSampled;
     glGenTextures(1, &textureColorBufferMultiSampled);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled);
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, primary_cam.frame_width, primary_cam.frame_height, GL_TRUE);
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, textureColorBufferMultiSampled, 0);
-    scene.textures.emplace("frame_buffer_texture", textureColorBufferMultiSampled);
 
-    // create a (also multisampled) renderbuffer object for depth and stencil attachments
-    scene.RBO.emplace("base_rbo", 0);
-    glGenRenderbuffers(1, &scene.RBO["base_rbo"]);
-    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["base_rbo"]);
+    // 创建RBO，作为 FBO 的深度/模板缓冲附件
+    scene.RBO.emplace("MSAA_rbo", 0);
+    glGenRenderbuffers(1, &scene.RBO["MSAA_rbo"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["MSAA_rbo"]);
     glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, primary_cam.frame_width, primary_cam.frame_height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["base_rbo"]);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["MSAA_rbo"]);
 
+    // 检查创建 MSAA 对应的FBO的完备性
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // 解绑 MSAA 对应的 FBO
 
+    
     // configure second post-processing framebuffer
     scene.FBO.emplace("intermediate_fbo", 0);
     glGenFramebuffers(1, &scene.FBO["intermediate_fbo"]);
@@ -1122,13 +1125,15 @@ Scene gen_offscreen_MSAA_scene()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0); // we only need a color buffer
+    
+    scene.shader["quad_shader"].use();
+    scene.textures.emplace("screenTexture", screenTexture); // 这句最后执行
+    scene.shader["quad_shader"].setInt("screenTexture", 0);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Intermediate framebuffer is not complete!" << endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    scene.shader["frame_shader"].use();
-    scene.shader["frame_shader"].setInt("screenTexture", 0);
 
     // Other render option
     glEnable(GL_DEPTH_TEST); // enable depth test
@@ -1143,6 +1148,8 @@ Scene gen_offscreen_MSAA_scene()
 
     return scene;
 }
+
+
 
 float planeVertices[] = {
     // positions            // normals         // texcoords

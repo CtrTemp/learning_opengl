@@ -380,20 +380,18 @@ void framebuffer_test_loop(Scene scene)
     // 清空当前的 Frame Buffer 设为全白
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
     glClear(GL_COLOR_BUFFER_BIT);
-    
+
     // 切换专门绘制 texture 平面图的 shader
     scene.shader["frame_shader"].use();
     glBindVertexArray(scene.VAO["frame_vao"]); // 绑定对应 VAO
     // glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]); // use the color attachment texture as the texture of the quad plane
-    
-    
+
     // 激活 texture 值
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]);
-    glDrawArrays(GL_TRIANGLES, 0, 36); // 绘制 texture 
+    glDrawArrays(GL_TRIANGLES, 0, 36); // 绘制 texture
 
     glBindVertexArray(0); // 解绑 VAO
-    
 }
 
 void scene_skybox_demo_loop(Scene scene)
@@ -710,8 +708,8 @@ void offscreen_MSAA_loop(Scene scene)
 {
     // render
     // ------
-    // 1. draw scene as normal in multisampled buffers
-    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]);
+    // 第一步：绑定 MSAA_FBO 我们将把图像写入 MSAA 对应的 FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["MSAA_fbo"]);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
@@ -733,13 +731,13 @@ void offscreen_MSAA_loop(Scene scene)
     scene.shader["base_shader"].setMat4("view", view);
     scene.shader["base_shader"].setMat4("projection", projection);
 
+    // 在 MSAA 的 FBO 中绘制，产生的结果将被导入到 MSAA_FBO 的超采样颜色附件中
     glBindVertexArray(scene.VAO["base_vao"]);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
 
-    // 2. now blit multisampled buffer(s) to normal colorbuffer of intermediate FBO. Image is stored in screenTexture
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.FBO["base_fbo"]);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene.FBO["intermediate_fbo"]);
+    // 之后是呈现到屏幕的部分，这里我们指定：以下渲染操作的读取源为 MSAA 的 FBO；且应该直接输出/写图像到屏幕
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.FBO["MSAA_fbo"]); // 从哪里读取
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene.FBO["intermediate_fbo"]);                     // 向哪里输出
     glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
     // 3. now render quad with scene's visuals as its texture image
@@ -749,8 +747,8 @@ void offscreen_MSAA_loop(Scene scene)
     glDisable(GL_DEPTH_TEST);
 
     // draw Screen quad
-    scene.shader["frame_shader"].use();
-    glBindVertexArray(scene.VAO["frame_vao"]);
+    scene.shader["quad_shader"].use();
+    glBindVertexArray(scene.VAO["quad_vao"]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]); // use the now resolved color attachment as the quad's texture
     glDrawArrays(GL_TRIANGLES, 0, 6);
