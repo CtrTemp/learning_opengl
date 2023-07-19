@@ -1,5 +1,4 @@
 #include "scene.h"
-#include "camera.h"
 
 // 单个Cube所需的顶点信息
 GLfloat vertices[] = {
@@ -527,7 +526,7 @@ Scene gen_framebuffer_scene()
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
     }
     // Other render option
-    glEnable(GL_DEPTH_TEST); // enable depth test
+    glEnable(GL_DEPTH_TEST);              // enable depth test
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // FBO 解绑
 
     /**
@@ -536,11 +535,8 @@ Scene gen_framebuffer_scene()
      *  2、一个render buffer object作为深度/模板缓冲附件，它使得我们的FBO可以进行深度/模板测试
      * */
 
-
-
     return scene;
 }
-
 
 float skyboxVertices[] = {
     // positions
@@ -1082,7 +1078,6 @@ Scene gen_offscreen_MSAA_scene()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void *)(2 * sizeof(float)));
 
-
     // configure MSAA framebuffer
     // --------------------------
     // 首先创建 MSAA 对应的 Frame Buffer Object
@@ -1111,7 +1106,6 @@ Scene gen_offscreen_MSAA_scene()
         cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // 解绑 MSAA 对应的 FBO
 
-    
     // configure second post-processing framebuffer
     scene.FBO.emplace("intermediate_fbo", 0);
     glGenFramebuffers(1, &scene.FBO["intermediate_fbo"]);
@@ -1125,7 +1119,7 @@ Scene gen_offscreen_MSAA_scene()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, screenTexture, 0); // we only need a color buffer
-    
+
     scene.shader["quad_shader"].use();
     scene.textures.emplace("screenTexture", screenTexture); // 这句最后执行
     scene.shader["quad_shader"].setInt("screenTexture", 0);
@@ -1133,7 +1127,6 @@ Scene gen_offscreen_MSAA_scene()
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         cout << "ERROR::FRAMEBUFFER:: Intermediate framebuffer is not complete!" << endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 
     // Other render option
     glEnable(GL_DEPTH_TEST); // enable depth test
@@ -1148,8 +1141,6 @@ Scene gen_offscreen_MSAA_scene()
 
     return scene;
 }
-
-
 
 float planeVertices[] = {
     // positions            // normals         // texcoords
@@ -1277,6 +1268,372 @@ Scene gen_test_Blinn_Phong_scene()
     scene.shader["obj_shader"].setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
+float planeVertices1[] = {
+    // positions            // normals         // texcoords
+    25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 0.0f,
+    -25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+    -25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 25.0f,
+
+    25.0f, -0.5f, 25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 0.0f,
+    -25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 0.0f, 25.0f,
+    25.0f, -0.5f, -25.0f, 0.0f, 1.0f, 0.0f, 25.0f, 25.0f};
+
+Scene gen_shadow_mapping_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 5.0f, 10.0f};
+    primary_cam.cameraPos = cameraPos;
+    // glm::vec3 cameraDir = {-1.0, -1.0, -1.0};
+    // primary_cam.cameraFront = cameraDir;
+
+    Shader plane_shader = Shader(
+        "../shaders/shader_file/shadow_base/plane.vert",
+        "../shaders/shader_file/shadow_base/plane.frag");
+
+    Shader cube_shader = Shader(
+        "../shaders/shader_file/shadow_base/cube.vert",
+        "../shaders/shader_file/shadow_base/cube.frag");
+
+    Shader depth_shader = Shader(
+        "../shaders/shader_file/shadow_base/depth.vert",
+        "../shaders/shader_file/shadow_base/depth.frag");
+
+    Shader quad_shader = Shader(
+        "../shaders/shader_file/shadow_base/quad.vert",
+        "../shaders/shader_file/shadow_base/quad.frag");
+
+    scene.shader.emplace("plane_shader", plane_shader);
+    scene.shader.emplace("cube_shader", cube_shader);
+    scene.shader.emplace("depth_shader", depth_shader);
+    scene.shader.emplace("quad_shader", quad_shader);
+
+    glm::vec3 dirLight_direction = {-1.2f, -1.0f, -0.5f};
+    glm::vec3 dirLight_ambient = {0.05f, 0.05f, 0.05f};
+    glm::vec3 dirLight_diffuse = {0.4f, 0.4f, 0.4f};
+    glm::vec3 dirLight_specular = {0.5f, 0.5f, 0.5f};
+
+    /************************ Plane VAO ************************/
+
+    scene.VAO.emplace("plane_vao", 0);
+    scene.VBO.emplace("plane_vbo", 0);
+    glGenVertexArrays(1, &scene.VAO["plane_vao"]);
+    glBindVertexArray(scene.VAO["plane_vao"]);
+
+    glGenBuffers(1, &scene.VBO["plane_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["plane_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices1), planeVertices1, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点法向量
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    // 顶点纹理坐标
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    // 场景物体材质导入
+    scene.shader["plane_shader"].use(); // 以下对 obj shader 进行配置
+    float shininess_item = 32.0f;       // 高光项表现力
+    scene.shader["plane_shader"].setFloat("material.shininess", shininess_item);
+
+    // 导入纹理
+    unsigned int floor_texture = load_textures("../textures/floor.jpg");
+
+    scene.textures.emplace("floor_texture", floor_texture);
+
+    scene.shader["plane_shader"].setInt("material.diffuse", 0);
+    scene.shader["plane_shader"].setInt("material.specular", 1);
+
+    // 平行光源
+    scene.shader["plane_shader"].setVec3("dirLight.direction", dirLight_direction);
+    scene.shader["plane_shader"].setVec3("dirLight.ambient", dirLight_ambient);
+    scene.shader["plane_shader"].setVec3("dirLight.diffuse", dirLight_diffuse);
+    scene.shader["plane_shader"].setVec3("dirLight.specular", dirLight_specular);
+
+    glBindVertexArray(0); // 解绑VAO
+
+    /************************ Cube VAO ************************/
+
+    scene.VAO.emplace("cube_vao", 0);
+    scene.VBO.emplace("cube_vbo", 0);
+
+    glGenVertexArrays(1, &scene.VAO["cube_vao"]);
+    glBindVertexArray(scene.VAO["cube_vao"]);
+
+    glGenBuffers(1, &scene.VBO["cube_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["cube_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点法向量
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    // 顶点纹理坐标
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    // 场景物体材质导入
+    scene.shader["cube_shader"].use(); // 以下对 obj shader 进行配置
+    scene.shader["cube_shader"].setFloat("material.shininess", shininess_item);
+
+    // 导入纹理
+    unsigned int cube_texture = load_textures("../textures/floor.jpg");
+
+    scene.textures.emplace("floor_texture", cube_texture);
+
+    scene.shader["cube_shader"].setInt("material.diffuse", 0);
+    scene.shader["cube_shader"].setInt("material.specular", 1);
+
+    // 平行光源
+    scene.shader["plane_shader"].setVec3("dirLight.direction", dirLight_direction);
+    scene.shader["plane_shader"].setVec3("dirLight.ambient", dirLight_ambient);
+    scene.shader["plane_shader"].setVec3("dirLight.diffuse", dirLight_diffuse);
+    scene.shader["plane_shader"].setVec3("dirLight.specular", dirLight_specular);
+
+    glBindVertexArray(0); // 解绑VAO
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    /************************ Depth Map ************************/
+
+    // 创建深度图相关的 Frame Buffer Object
+    scene.FBO.emplace("depth_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["depth_fbo"]);
+
+    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+    // 创建深度图的纹理
+    unsigned int depthMap;
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    scene.shader["quad_shader"].use();
+    scene.textures.emplace("depthMap", depthMap);
+    scene.shader["quad_shader"].setInt("depthMap", 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]); // 绑定 FBO
+    // 刚刚创建的深度图纹理作为深度缓冲附件
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // 还原到窗口默认的附件
+
+    return scene;
+}
+
+Scene switch_gen_shadow_mapping_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 5.0f, 10.0f};
+    primary_cam.cameraPos = cameraPos;
+    // glm::vec3 cameraDir = {-1.0, -1.0, -1.0};
+    // primary_cam.cameraFront = cameraDir;
+
+    Shader depth_shader = Shader(
+        "../shaders/shader_file/shadow_base/depth.vert",
+        "../shaders/shader_file/shadow_base/depth.frag");
+
+    Shader quad_shader = Shader(
+        "../shaders/shader_file/shadow_base/quad.vert",
+        "../shaders/shader_file/shadow_base/quad.frag");
+
+    scene.shader.emplace("depth_shader", depth_shader);
+    scene.shader.emplace("quad_shader", quad_shader);
+
+    // glm::vec3 dirLight_direction = {-1.2f, -1.0f, -0.5f};
+    // glm::vec3 dirLight_ambient = {0.05f, 0.05f, 0.05f};
+    // glm::vec3 dirLight_diffuse = {0.4f, 0.4f, 0.4f};
+    // glm::vec3 dirLight_specular = {0.5f, 0.5f, 0.5f};
+
+    /************************ Plane Vao ************************/
+    scene.VAO.emplace("plane_vao", 0);
+    glGenVertexArrays(1, &scene.VAO["plane_vao"]);
+    glBindVertexArray(scene.VAO["plane_vao"]);
+
+    scene.VBO.emplace("plane_vbo", 0);
+    glGenBuffers(1, &scene.VBO["plane_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["plane_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices1), planeVertices1, GL_STATIC_DRAW);
+    // position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    // normal
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+    // texCoord
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+    glBindVertexArray(0); // 解绑 VAO
+
+    unsigned int woodTexture = load_textures("../textures/floor.jpg");
+
+    /************************ Depth Map ************************/
+
+    // 创建深度图相关的 Frame Buffer Object
+    scene.FBO.emplace("depth_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["depth_fbo"]);
+
+    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+    // 创建深度图的纹理
+    unsigned int depthMap;
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    scene.shader["quad_shader"].use();
+    scene.textures.emplace("depthMap", depthMap);
+    scene.shader["quad_shader"].setInt("depthMap", 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]); // 绑定 FBO
+    // 刚刚创建的深度图纹理作为深度缓冲附件
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); // 还原到窗口默认的附件
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
+Scene switch_gen_shadow_mapping_scene_phase2()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 5.0f, 10.0f};
+    primary_cam.cameraPos = cameraPos;
+    // glm::vec3 cameraDir = {-1.0, -1.0, -1.0};
+    // primary_cam.cameraFront = cameraDir;
+
+    Shader obj_shader = Shader(
+        "../shaders/shader_file/shadow_base/phase02/obj.vert",
+        "../shaders/shader_file/shadow_base/phase02/obj.frag");
+
+    Shader depth_shader = Shader(
+        "../shaders/shader_file/shadow_base/phase02/depth.vert",
+        "../shaders/shader_file/shadow_base/phase02/depth.frag");
+
+    Shader quad_shader = Shader(
+        "../shaders/shader_file/shadow_base/phase02/quad.vert",
+        "../shaders/shader_file/shadow_base/phase02/quad.frag");
+
+    scene.shader.emplace("obj_shader", obj_shader);
+    scene.shader.emplace("depth_shader", depth_shader);
+    scene.shader.emplace("quad_shader", quad_shader);
+
+    // glm::vec3 dirLight_direction = {-1.2f, -1.0f, -0.5f};
+    // glm::vec3 dirLight_ambient = {0.05f, 0.05f, 0.05f};
+    // glm::vec3 dirLight_diffuse = {0.4f, 0.4f, 0.4f};
+    // glm::vec3 dirLight_specular = {0.5f, 0.5f, 0.5f};
+
+    /************************ Plane Vao ************************/
+    scene.VAO.emplace("plane_vao", 0);
+    glGenVertexArrays(1, &scene.VAO["plane_vao"]);
+    glBindVertexArray(scene.VAO["plane_vao"]);
+
+    scene.VBO.emplace("plane_vbo", 0);
+    glGenBuffers(1, &scene.VBO["plane_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["plane_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices1), planeVertices1, GL_STATIC_DRAW);
+    // position
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    // normal
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+    // texCoord
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+    glBindVertexArray(0); // 解绑 VAO
+
+    unsigned int woodTexture = load_textures("../textures/floor.jpg");
+    scene.textures.emplace("woodTexture", woodTexture);
+
+    /************************ Depth Map ************************/
+
+    // 创建深度图相关的 Frame Buffer Object
+
+    // configure depth map FBO
+    // -----------------------
+    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+    
+    scene.FBO.emplace("depth_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["depth_fbo"]);
+    // create depth texture
+    unsigned int depthMap;
+    glGenTextures(1, &depthMap);
+    glBindTexture(GL_TEXTURE_2D, depthMap);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    scene.textures.emplace("depthMap", depthMap);
+
+    scene.shader["obj_shader"].use();
+    scene.shader["obj_shader"].setInt("diffuseTexture", 0);
+    scene.shader["obj_shader"].setInt("shadowMap", 1);
+
+    scene.shader["quad_shader"].use();
+    scene.shader["quad_shader"].setInt("depthMap", 0);
 
     // depth test
     glEnable(GL_DEPTH_TEST); // enable depth test

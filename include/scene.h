@@ -5,6 +5,7 @@
 #include "shaders/shaders.h"
 #include "textures/gl_textures.h"
 #include "models/models.h"
+#include "camera.h"
 
 // 创建一个场景，需要在本地创建，并导入到GPU中
 class Scene
@@ -64,4 +65,13 @@ Scene gen_default_MSAA_scene();
 Scene gen_offscreen_MSAA_scene();
 
 Scene gen_test_Blinn_Phong_scene();
+
+Scene gen_shadow_mapping_scene();
+
+Scene gen_shadow_mapping_scene();
+
+Scene switch_gen_shadow_mapping_scene();
+
+Scene switch_gen_shadow_mapping_scene_phase2();
+
 #endif

@@ -33,4 +33,16 @@ void offscreen_MSAA_loop(Scene scene);
 
 void blinn_phong_demo_loop(Scene scene);
 
+void shadow_mapping_demo_loop(Scene scene);
+
+
+
+void renderScene(Shader &shader, unsigned int VAO);
+void renderCube();
+void renderQuad();
+
+void switch_shadow_mapping_demo_loop(Scene scene);
+
+void switch_shadow_mapping_demo_loop_p2(Scene scene);
+
 #endif
