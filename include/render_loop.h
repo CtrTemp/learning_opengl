@@ -45,4 +45,10 @@ void switch_shadow_mapping_demo_loop(Scene scene);
 
 void switch_shadow_mapping_demo_loop_p2(Scene scene);
 
+
+void renderScene_point_light(Shader &shader);
+void renderCube_point_light();
+
+void point_light_source_shadow_mapping_demo_loop(Scene scene);
+
 #endif

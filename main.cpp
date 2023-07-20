@@ -54,7 +54,8 @@ int main()
     // Scene blinn_phong_scene = gen_test_Blinn_Phong_scene();
     // Scene shadow_scene = gen_shadow_mapping_scene();
     // Scene real_shadow_scene = switch_gen_shadow_mapping_scene();
-    Scene real_shadow_scene_p2 = switch_gen_shadow_mapping_scene_phase2();
+    // Scene real_shadow_scene_p2 = switch_gen_shadow_mapping_scene_phase2();
+    Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
     
 
     // main render loop
@@ -80,7 +81,8 @@ int main()
         // blinn_phong_demo_loop(blinn_phong_scene);
         // shadow_mapping_demo_loop(shadow_scene);
         // switch_shadow_mapping_demo_loop(real_shadow_scene);
-        switch_shadow_mapping_demo_loop_p2(real_shadow_scene_p2);
+        // switch_shadow_mapping_demo_loop_p2(real_shadow_scene_p2);
+        point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

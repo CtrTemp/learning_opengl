@@ -1476,7 +1476,6 @@ Scene switch_gen_shadow_mapping_scene()
     scene.shader.emplace("depth_shader", depth_shader);
     scene.shader.emplace("quad_shader", quad_shader);
 
-
     /************************ Plane Vao ************************/
     scene.VAO.emplace("plane_vao", 0);
     glGenVertexArrays(1, &scene.VAO["plane_vao"]);
@@ -1620,7 +1619,7 @@ Scene switch_gen_shadow_mapping_scene_phase2()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     GLfloat borderColor[] = {1.0, 1.0, 1.0, 1.0};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-    
+
     // attach depth texture as FBO's depth buffer
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
@@ -1635,6 +1634,86 @@ Scene switch_gen_shadow_mapping_scene_phase2()
 
     scene.shader["quad_shader"].use();
     scene.shader["quad_shader"].setInt("depthMap", 0);
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
+Scene gen_point_light_shadow_mapping_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 0.0f, 0.0f};
+    primary_cam.cameraPos = cameraPos;
+    
+
+    Shader obj_shader = Shader(
+        "../shaders/shader_file/shadow_base/point_light/obj.vert",
+        "../shaders/shader_file/shadow_base/point_light/obj.frag");
+
+    Shader depth_shader = Shader(
+        "../shaders/shader_file/shadow_base/point_light/depth.vert",
+        "../shaders/shader_file/shadow_base/point_light/depth.frag",
+        "../shaders/shader_file/shadow_base/point_light/depth.geom");
+
+    scene.shader.emplace("obj_shader", obj_shader);
+    scene.shader.emplace("depth_shader", depth_shader);
+
+
+    /************************ Depth Map ************************/
+
+    // 创建深度图相关的 Frame Buffer Object
+
+    // configure depth map FBO
+    // -----------------------
+
+    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+    scene.FBO.emplace("depth_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["depth_fbo"]);
+    // 创建深度图，但注意由于这次是点光源，所以我们应该创建一个立方体深度图 Cube Depth Map
+    unsigned int depthCubemap;
+    glGenTextures(1, &depthCubemap);
+    glBindTexture(GL_TEXTURE_2D, depthCubemap);
+
+    for (GLuint i = 0; i < 6; ++i)
+    {
+        // 注意这里在GPU上创建了6张深度图
+        // GL_TEXTURE_CUBE_MAP_POSITIVE_X + i 对应了立方体的六个面
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    // attach depth texture as FBO's depth buffer
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    scene.textures.emplace("depthCubemap", depthCubemap);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 加载纹理
+    unsigned int woodTexture = load_textures("../textures/floor.jpg");
+    scene.textures.emplace("woodTexture", woodTexture);
+
+    scene.shader["obj_shader"].use();
+    scene.shader["obj_shader"].setInt("diffuseTexture", 0);
+    scene.shader["obj_shader"].setInt("depthMap", 1);
 
     // depth test
     glEnable(GL_DEPTH_TEST); // enable depth test

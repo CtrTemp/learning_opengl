@@ -74,4 +74,6 @@ Scene switch_gen_shadow_mapping_scene();
 
 Scene switch_gen_shadow_mapping_scene_phase2();
 
+Scene gen_point_light_shadow_mapping_scene();
+
 #endif
