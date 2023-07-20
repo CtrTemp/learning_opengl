@@ -1654,7 +1654,6 @@ Scene gen_point_light_shadow_mapping_scene()
     // 相机初始化坐标更改
     glm::vec3 cameraPos = {0.0f, 0.0f, 0.0f};
     primary_cam.cameraPos = cameraPos;
-    
 
     Shader obj_shader = Shader(
         "../shaders/shader_file/shadow_base/point_light/obj.vert",
@@ -1667,7 +1666,6 @@ Scene gen_point_light_shadow_mapping_scene()
 
     scene.shader.emplace("obj_shader", obj_shader);
     scene.shader.emplace("depth_shader", depth_shader);
-
 
     /************************ Depth Map ************************/
 
@@ -1714,6 +1712,84 @@ Scene gen_point_light_shadow_mapping_scene()
     scene.shader["obj_shader"].use();
     scene.shader["obj_shader"].setInt("diffuseTexture", 0);
     scene.shader["obj_shader"].setInt("depthMap", 1);
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
+float planeVertices_normal[] = {
+    // positions            // normals         // texcoords
+    2.0f, 2.0f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f,
+    -2.0f, 2.0f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+    -2.0f, -2.0f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f,
+
+    2.0f, 2.0f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 0.0f,
+    -2.0f, -2.0f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f,
+    2.0f, -2.0f, -0.5f, 0.0f, 1.0f, 0.0f, 2.0f, 2.0f};
+
+Scene gen_simple_normal_mapping_scene()
+{
+
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 0.0f, 3.0f};
+    primary_cam.cameraPos = cameraPos;
+
+    Shader obj_shader = Shader(
+        "../shaders/shader_file/normal_map_base/base.vert",
+        "../shaders/shader_file/normal_map_base/base.frag");
+
+    scene.shader.emplace("obj_shader", obj_shader);
+
+    scene.VAO.emplace("obj_vao", 0);
+    scene.VBO.emplace("base_vbo", 0);
+
+    /************************ 绑定场景物体 VAO ************************/
+    glGenVertexArrays(1, &scene.VAO["obj_vao"]);
+    glBindVertexArray(scene.VAO["obj_vao"]);
+
+    glGenBuffers(1, &scene.VBO["base_vbo"]);
+    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices_normal), planeVertices_normal, GL_STATIC_DRAW); // 初始化数据
+
+    // 顶点位置
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+    glEnableVertexAttribArray(0);
+
+    // 顶点法向量
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
+    glEnableVertexAttribArray(1);
+
+    // 顶点纹理坐标
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
+    glEnableVertexAttribArray(2);
+
+    // 场景物体材质导入
+    scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
+    float shininess_item = 32.0f;     // 高光项表现力
+    scene.shader["obj_shader"].setFloat("material.shininess", shininess_item);
+    scene.shader["obj_shader"].setVec3("lightPos", glm::vec3(5.0f, 5.0f, 2.0f));
+
+    // 导入纹理
+    unsigned int brickwall_texture = load_textures("../textures/brickwall.jpg");
+    unsigned int brickwall_normal_texture = load_textures("../textures/brickwall_normal.jpg");
+
+    scene.textures.emplace("brickwall_texture", brickwall_texture);
+    scene.textures.emplace("brickwall_normal_texture", brickwall_normal_texture);
+
+    scene.shader["obj_shader"].setInt("material.diffuse", 0);
+    scene.shader["obj_shader"].setInt("material.specular", 1);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
     // depth test
     glEnable(GL_DEPTH_TEST); // enable depth test

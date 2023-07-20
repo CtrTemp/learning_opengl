@@ -51,4 +51,7 @@ void renderCube_point_light();
 
 void point_light_source_shadow_mapping_demo_loop(Scene scene);
 
+
+void simple_normal_mapping_demo_loop(Scene scene);
+
 #endif
