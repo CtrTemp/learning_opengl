@@ -1464,8 +1464,6 @@ Scene switch_gen_shadow_mapping_scene()
     // 相机初始化坐标更改
     glm::vec3 cameraPos = {0.0f, 5.0f, 10.0f};
     primary_cam.cameraPos = cameraPos;
-    // glm::vec3 cameraDir = {-1.0, -1.0, -1.0};
-    // primary_cam.cameraFront = cameraDir;
 
     Shader depth_shader = Shader(
         "../shaders/shader_file/shadow_base/depth.vert",
@@ -1478,10 +1476,6 @@ Scene switch_gen_shadow_mapping_scene()
     scene.shader.emplace("depth_shader", depth_shader);
     scene.shader.emplace("quad_shader", quad_shader);
 
-    // glm::vec3 dirLight_direction = {-1.2f, -1.0f, -0.5f};
-    // glm::vec3 dirLight_ambient = {0.05f, 0.05f, 0.05f};
-    // glm::vec3 dirLight_diffuse = {0.4f, 0.4f, 0.4f};
-    // glm::vec3 dirLight_specular = {0.5f, 0.5f, 0.5f};
 
     /************************ Plane Vao ************************/
     scene.VAO.emplace("plane_vao", 0);
@@ -1511,12 +1505,13 @@ Scene switch_gen_shadow_mapping_scene()
     scene.FBO.emplace("depth_fbo", 0);
     glGenFramebuffers(1, &scene.FBO["depth_fbo"]);
 
-    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024; // 这个是深度图的分辨率
 
     // 创建深度图的纹理
     unsigned int depthMap;
     glGenTextures(1, &depthMap);
     glBindTexture(GL_TEXTURE_2D, depthMap);
+    // 创建的纹理将作为一个深度缓冲附件被传入
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1620,10 +1615,12 @@ Scene switch_gen_shadow_mapping_scene_phase2()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // 版本04：优化：
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     GLfloat borderColor[] = {1.0, 1.0, 1.0, 1.0};
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+    
     // attach depth texture as FBO's depth buffer
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
