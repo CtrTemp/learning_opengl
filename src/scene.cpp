@@ -87,6 +87,15 @@ Scene gen_multi_rotating_cube_scene()
     // 导入纹理
     unsigned int box_texture = load_textures("../textures/box.png");
     unsigned int grass_texture = load_textures("../textures/grass.png");
+
+    /*
+        如果使用默认的 GL_REPEAT ,则 OpenGL 会对边缘的值和纹理下一个重复的值进行插值，但是由于我们使用了透明值，
+    纹理图像的顶部将会与底部边缘的纯色值进行插值。这样的结果是一个半透明的有色边框。可以通过设置 GL_CLAMP_TO_EDGE
+    解决这个问题。
+    */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     unsigned int transparent_texture = load_textures("../textures/transparent.png");
 
     scene.textures.emplace("box_texture", box_texture);
@@ -105,7 +114,7 @@ Scene gen_multi_rotating_cube_scene()
     // Other render option
     glEnable(GL_DEPTH_TEST); // enable depth test
 
-    glEnable(GL_BLEND); // enable transparent color blend
+    glEnable(GL_BLEND); // 使能颜色融合，这样就可以渲染半透明表面
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glEnable(GL_CULL_FACE); // enable face culling
@@ -476,8 +485,13 @@ Scene gen_framebuffer_scene()
     // 在GPU上创建这个纹理，保证纹理的长宽和屏幕一致即可。 最后的 NULL 表示我们不去填充这个纹理内存数据，这部分要等到渲染阶段进行填充
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 
+    // 对该纹理的参数进行设置
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // 解决边缘纹理采样造成的问题（默认最后一个参数是 GL_REPEAT）
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     glBindTexture(GL_TEXTURE_2D, 0); // 解绑作为颜色附件的 texture
 
     scene.textures.emplace("screenTexture", texture);
@@ -587,7 +601,7 @@ Scene gen_skybox_scene()
     Scene scene;
 
     // model 导入
-    scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
+    scene.model_obj.emplace("back_pack", Model("../models/backpack.obj"));
 
     Shader base_shader = Shader("../shaders/shader_file/skybox_base/base.vert", "../shaders/shader_file/skybox_base/base.frag");
     Shader model_shader = Shader("../shaders/shader_file/skybox_base/model.vert", "../shaders/shader_file/skybox_base/model.frag");

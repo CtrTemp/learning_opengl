@@ -153,7 +153,7 @@ void scene_light_demo_loop(Scene scene)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, scene.textures["frame_texture"]);
     // 1、第一步，开启模板写入，并设置
-    // 模板测试总是会通过，也就是无论如何以下的片段绘制都会被执行
+    // 模板测试总是会通过，也就是无论如何以下的片段绘制都会被执行，并且被绘制的片段将会默认向模板缓冲区中写1
     glStencilFunc(GL_ALWAYS, 1, 0xFF);
     // 允许模板缓冲区写入，根据最开始创建场景时的设置，通过模板/深度测试的片段会向模板缓冲区的对应位置写1
     // 也就是执行完以下的绘制后，所有画CUBE的位置的模板值将被置为1,其他位置是0
@@ -176,23 +176,20 @@ void scene_light_demo_loop(Scene scene)
     // 绘制完之后，模板缓冲区已经被更新完毕了
 
     // == =============
-    // 2nd. Render pass, now draw slightly scaled versions of the objects, this time disabling stencil writing.
-    // Because stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are now not drawn, thus only drawing
-    // the objects' size differences, making it look like borders.
     // 2、第二步，关闭模板写入和深度测试
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF); // GL_NOTEQUAL 表示当片段值与模板缓冲区中的值不相等的时候通过模板测试，并向模板中写1
     // glStencilMask(0x00);                 // 关闭模板写入 感觉这个根本没必要
     // glDisable(GL_DEPTH_TEST);            // 关闭深度测试 这个也没必要 （果然注释后没有什么差别）
     scene.shader["frame_shader"].use(); // 其次使用绘制边框的 shader 对物体进行第二次绘制
-    float scale = 1.1f;
+    float scale = 1.05f;
 
     // 以下绘制将会有如下的流程：
     /**
-     * 1、将原来的CUBE扩大了一圈进行绘制
-     * 2、此时这些被绘制部分片段的值应该被置为1
-     * 3、以上的片段模板值会与模板缓冲区中的值进行比较，仅当二者不相等时才会被置为1
-     * 4、也就是CUBE扩大的那一圈会被置为1，这就是边框部分
-     * 5、而对于那些没有通过深度测试的，会被置为原来的值，所以原本扩大之前的CUBE还会被正确绘制，并保持遮挡关系。
+     * 1、将原来的CUBE扩大了一圈进行绘制；
+     * 2、此时由于我们关闭了模板的写入，所以模板缓冲区不会被更新；
+     * 3、当绘制时，进行模板测试，仅当不为1时才会通过模板测试进行绘制；
+     * 4、也就是上一个在缩放之前的区域永远不会被绘制，仅不为1的区域也就是因为被放大多出来的那一圈边框会通过模板测试；
+     * 5、由于这阶段的绘制关闭了深度测试，又因为我们绘制的是纯色边框，后绘制的叠加到先绘制的图形上并不影响。
      * */
 
     // 使用另一个片段着色器绘制
@@ -318,7 +315,7 @@ void framebuffer_test_loop(Scene scene)
 {
     /**
      *  改变窗口的默认 frame buffer 的绑定，将其绑定到我们创建的 Frame Buffer Object
-     * 之后我们的渲染指令操作的结果都将被绘制到该FBO的颜色附件上
+     * 之后我们的渲染指令操作的结果都将被绘制到该FBO的颜色附件上。
      * */
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["base_fbo"]);
     glEnable(GL_DEPTH_TEST); // 这里我们使能深度测试针对的是我们创建的FBO
@@ -376,7 +373,13 @@ void framebuffer_test_loop(Scene scene)
      *  切换回窗口默认的Frame Buffer
      * */
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDisable(GL_DEPTH_TEST); // 失能窗口默认 Frame Buffer 的深度测试，所以后被绘制的总会被呈现在窗口的最前面
+    /**
+     *  失能窗口默认 Frame Buffer 的深度测试，所以后被绘制的总会被呈现在窗口的最前面。
+     * 于是我们下一步绘制我们创建的FBO的中的纹理时，它总能被呈现在窗口。
+     *  不过由于我们的这个demo没有绘制其他的东西，只有这一个窗口纹理，所以说是不是失能
+     * 深度测试好像也没有多大的关系，，，但是情况好像和预想的不一样，下面这句不能注销
+     * */
+    glDisable(GL_DEPTH_TEST);
     // 清空当前的 Frame Buffer 设为全白
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); // set clear color to white (not really necessary actually, since we won't be able to see behind the quad anyways)
     glClear(GL_COLOR_BUFFER_BIT);
@@ -391,6 +394,8 @@ void framebuffer_test_loop(Scene scene)
     glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]);
     glDrawArrays(GL_TRIANGLES, 0, 36); // 绘制 texture
 
+    // 这样做的好处是方便我们进行一些有趣的图像后处理
+
     glBindVertexArray(0); // 解绑 VAO
 }
 
@@ -404,14 +409,34 @@ void scene_skybox_demo_loop(Scene scene)
 
     // 定义 MVP 变换阵 中的 view 和 project 变换阵一般是不变的，可以预先定义并设置
     glm::mat4 view;
-    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
-
     glm::mat4 projection = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
-
     glm::mat4 model = glm::mat4(1.0f);
 
+    /****************************** 绘制 SkyBox 注意这个应该优先进行绘制******************************/
+    glDepthMask(GL_FALSE);
+    // glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    scene.shader["skybox_shader"].use();
+    // 这句很有意思～ mat4 转为 mat3 这使得model变换中的平移操作对当前的天空盒不产生影响，天空盒永远无限远
+    view = glm::mat4(glm::mat3(glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp)));
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+    scene.shader["skybox_shader"].setMat4("view", view);
+    scene.shader["skybox_shader"].setMat4("projection", projection);
+    // ... set view and projection matrix
+    glBindVertexArray(scene.VAO["skybox_vao"]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["cubemapTexture"]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    // glDepthFunc(GL_LESS); // set depth function back to default
+    glDepthMask(GL_TRUE);
+
+    glBindVertexArray(0); // 解绑 VAO
+
     /****************************** 绘制模型 ******************************/
+
+    // 注意这里要重新设置 view 和 projection 矩阵
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
     // 选定shader
     scene.shader["model_shader"].use();
     scene.shader["model_shader"].setMat4("view", view);
@@ -460,22 +485,6 @@ void scene_skybox_demo_loop(Scene scene)
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
-    glBindVertexArray(0); // 解绑 VAO
-
-    /****************************** 绘制 SkyBox ******************************/
-    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
-    scene.shader["skybox_shader"].use();
-    // 这句很有意思～
-    view = glm::mat4(glm::mat3(glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp)));
-    scene.shader["skybox_shader"].setMat4("view", view);
-    scene.shader["skybox_shader"].setMat4("projection", projection);
-    // ... set view and projection matrix
-    glBindVertexArray(scene.VAO["skybox_vao"]);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["cubemapTexture"]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glDepthFunc(GL_LESS); // set depth function back to default
-
     glBindVertexArray(0); // 解绑 VAO
 }
 

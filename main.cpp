@@ -42,7 +42,7 @@ int main()
     // Scene light_scene = gen_lighting_scene();
     // Scene model_scene = gen_load_model_scene();
     // Scene framebuffer_scene = gen_framebuffer_scene();
-    // Scene skybox_scene = gen_skybox_scene();
+    Scene skybox_scene = gen_skybox_scene();
     // Scene geom_scene = gen_geometry_shader_scene();
     // Scene explode_scene = gen_explode_model_scene();
     // Scene visual_norm_scene = gen_visualize_model_normal_scene();
@@ -56,8 +56,7 @@ int main()
     // Scene real_shadow_scene = switch_gen_shadow_mapping_scene();
     // Scene real_shadow_scene_p2 = switch_gen_shadow_mapping_scene_phase2();
     // Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
-
-    Scene normal_mapping_scene = gen_simple_normal_mapping_scene();
+    // Scene normal_mapping_scene = gen_simple_normal_mapping_scene();
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -70,7 +69,7 @@ int main()
         // scene_light_demo_loop(light_scene);
         // scene_load_model_demo_loop(model_scene);
         // framebuffer_test_loop(framebuffer_scene);
-        // scene_skybox_demo_loop(skybox_scene);
+        scene_skybox_demo_loop(skybox_scene);
         // scene_geometry_shader_demo_loop(geom_scene);
         // scene_explode_model_demo_loop(explode_scene);
         // scene_visualize_model_normal_loop(visual_norm_scene);
@@ -84,7 +83,7 @@ int main()
         // switch_shadow_mapping_demo_loop(real_shadow_scene);
         // switch_shadow_mapping_demo_loop_p2(real_shadow_scene_p2);
         // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
-        simple_normal_mapping_demo_loop(normal_mapping_scene);
+        // simple_normal_mapping_demo_loop(normal_mapping_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
