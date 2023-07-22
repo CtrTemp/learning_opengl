@@ -690,17 +690,12 @@ Scene gen_geometry_shader_scene()
 
     Scene scene;
 
-    Shader base_shader = Shader(
-        "../shaders/shader_file/geometry_base/geo.vert",
-        "../shaders/shader_file/geometry_base/geo.frag",
-        "../shaders/shader_file/geometry_base/geo.geom");
 
     Shader house_shader = Shader(
         "../shaders/shader_file/geometry_base/geo.vert",
         "../shaders/shader_file/geometry_base/geo.frag",
         "../shaders/shader_file/geometry_base/house.geom");
 
-    scene.shader.emplace("base_shader", base_shader);
     scene.shader.emplace("house_shader", house_shader);
 
     scene.VAO.emplace("base_vao", 0);
@@ -731,9 +726,9 @@ Scene gen_explode_model_scene()
     scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
 
     Shader base_shader = Shader(
-        "../shaders/shader_file/geometry_base/model.vert",
-        "../shaders/shader_file/geometry_base/model.frag",
-        "../shaders/shader_file/geometry_base/explode.geom");
+        "../shaders/shader_file/geometry_explode/model.vert",
+        "../shaders/shader_file/geometry_explode/model.frag",
+        "../shaders/shader_file/geometry_explode/explode.geom");
 
     scene.shader.emplace("base_shader", base_shader);
 
@@ -756,13 +751,13 @@ Scene gen_visualize_model_normal_scene()
     scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
 
     Shader visual_norm_shader = Shader(
-        "../shaders/shader_file/geometry_base/visual_norm.vert",
-        "../shaders/shader_file/geometry_base/visual_norm.frag",
-        "../shaders/shader_file/geometry_base/visual_norm.geom");
+        "../shaders/shader_file/geometry_norm/visual_norm.vert",
+        "../shaders/shader_file/geometry_norm/visual_norm.frag",
+        "../shaders/shader_file/geometry_norm/visual_norm.geom");
 
     Shader base_shader = Shader(
-        "../shaders/shader_file/geometry_base/model.vert",
-        "../shaders/shader_file/geometry_base/model.frag");
+        "../shaders/shader_file/geometry_norm/model.vert",
+        "../shaders/shader_file/geometry_norm/model.frag");
 
     scene.shader.emplace("visual_norm_shader", visual_norm_shader);
     scene.shader.emplace("base_shader", base_shader);
