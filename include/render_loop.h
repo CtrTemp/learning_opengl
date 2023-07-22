@@ -31,6 +31,8 @@ void MSAA_demo_loop(Scene scene);
 
 void offscreen_MSAA_loop(Scene scene);
 
+void offscreen_MSAA_loop_ano(Scene scene);
+
 void blinn_phong_demo_loop(Scene scene);
 
 void shadow_mapping_demo_loop(Scene scene);

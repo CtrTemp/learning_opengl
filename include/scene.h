@@ -64,6 +64,8 @@ Scene gen_default_MSAA_scene();
 
 Scene gen_offscreen_MSAA_scene();
 
+Scene gen_offscreen_MSAA_scene_ano();
+
 Scene gen_test_Blinn_Phong_scene();
 
 Scene gen_shadow_mapping_scene();

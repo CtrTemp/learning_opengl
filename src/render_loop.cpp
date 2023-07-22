@@ -747,20 +747,80 @@ void offscreen_MSAA_loop(Scene scene)
     // 之后是呈现到屏幕的部分，这里我们指定：以下渲染操作的读取源为 MSAA 的 FBO；且应该直接输出/写图像到屏幕
     glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.FBO["MSAA_fbo"]);         // 从哪里读取
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, scene.FBO["intermediate_fbo"]); // 向哪里输出
+    /**
+     *  这次我们将 MSAA 渲染生成的数据输送到中间层 FBO 中，可以在它这里进行一次预处理。注意：实际上我们是将
+     * 数据输送到了 intermediate_fbo 的颜色附件上，其实就是绑定在它上面的 screenTexture 。执行完下面的数据
+     * 输送语句后 screenTexture 将被填充
+     * */ 
     glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-    // 3. now render quad with scene's visuals as its texture image
+    
+    // 切换绑定，先切换到屏幕默认 FBO ，对其清屏
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST); // 取消深度测试，从而使得后面绘制到屏幕上的 screenTexture 可以完全被显示。
 
-    // draw Screen quad
+    /**
+     *  可以直接绘制，将 screenTexture 中的内容呈现在屏幕上。也可以使用这个 shader 进行对 screenTexture 的后处理，
+     * 得到一些图片处理后的结果。（如灰度图、模糊）
+     * */ 
     scene.shader["quad_shader"].use();
     glBindVertexArray(scene.VAO["quad_vao"]);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["screenTexture"]); // use the now resolved color attachment as the quad's texture
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void offscreen_MSAA_loop_ano(Scene scene)
+{
+    // render
+    // ------
+    // 第一步：绑定 MSAA_FBO 我们将把图像写入 MSAA 对应的 FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["MSAA_fbo"]);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+
+    // view/projection transformations
+    // 定义 MVP 变换阵并导入shader
+    glm::mat4 view;
+    view = glm::lookAt(primary_cam.cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), primary_cam.cameraUp);
+
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 1000.0f);
+
+    // render the loaded model
+    glm::mat4 model = glm::mat4(1.0f);
+
+    // set transformation matrices
+    scene.shader["base_shader"].use();
+    scene.shader["base_shader"].setMat4("model", model);
+    scene.shader["base_shader"].setMat4("view", view);
+    scene.shader["base_shader"].setMat4("projection", projection);
+
+    // 在 MSAA 的 FBO 中绘制，产生的结果将被导入到 MSAA_FBO 的超采样颜色附件中
+    glBindVertexArray(scene.VAO["base_vao"]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    /*
+        首先这里的一个问题就是，为什么渲染命令执行后再配置的 FBO 中的 src 和 dst，而且还能有正确显示效果。
+    这是由于我们应该明确渲染到 FBO 的颜色附件和展示到屏幕显示是两回事。上面的 Draw Call 仅仅是向 GPU 传递
+    绘制命令，而如何展示到屏幕是用下面的语句进行配置的。
+        glBindFramebuffer 可以使用如之前的形式，将第一项配置为 GL_FRAMEBUFFER 从而使得 FrameBuffer
+    的读取和输出是同一个 FBO。
+        而以下这种形式可以使用 GL_READ_FRAMEBUFFER 决定 FBO 的数据来源，使用 GL_DRAW_FRAMEBUFFER 决定
+    FBO 的数据流向。
+    */
+
+    // 之后是呈现到屏幕的部分，这里我们指定：以下渲染操作的读取源为 MSAA 的 FBO；且应该直接输出/写图像到屏幕
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.FBO["MSAA_fbo"]); // 从哪里读取
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);                     // 向哪里输出
+    /**
+     *  制定好以上规则后，便使用以下的 glBlitFramebuffer 函数将数据从 src 导入到 dst 中。
+     * 在这里我们直接将数据输出到了屏幕默认的 Frame Buffer 中，于是就直接被呈现到屏幕了。
+     * */ 
+    glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
 void blinn_phong_demo_loop(Scene scene)
