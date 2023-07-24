@@ -3,7 +3,7 @@
 
 #include "global_include.h"
 #include "shaders/shaders.h"
-#include "textures/gl_textures.h"
+#include "gl_textures.h"
 #include "models/models.h"
 #include "camera.h"
 
@@ -83,5 +83,11 @@ Scene gen_simple_normal_mapping_scene();
 Scene gen_PBR_light_base_scene();
 
 Scene gen_PBR_light_textured_scene();
+
+Scene gen_PBR_IBL_diffuse_scene();
+Scene gen_PBR_IBL_diffuse_scene_p2();
+Scene gen_PBR_IBL_diffuse_scene_ano();
+
+void renderCube_IBL();
 
 #endif

@@ -3,7 +3,7 @@
 #include "global_include.h"
 #include "shaders/shaders.h"
 #include "models/mesh.h"
-#include "textures/gl_textures.h"
+#include "gl_textures.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"

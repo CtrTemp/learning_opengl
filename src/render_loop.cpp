@@ -412,24 +412,24 @@ void scene_skybox_demo_loop(Scene scene)
     glm::mat4 projection = glm::mat4(1.0f);
     glm::mat4 model = glm::mat4(1.0f);
 
-    /****************************** 绘制 SkyBox 注意这个应该优先进行绘制******************************/
-    glDepthMask(GL_FALSE);
-    // glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
-    scene.shader["skybox_shader"].use();
-    // 这句很有意思～ mat4 转为 mat3 这使得model变换中的平移操作对当前的天空盒不产生影响，天空盒永远无限远
-    view = glm::mat4(glm::mat3(glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp)));
-    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
-    scene.shader["skybox_shader"].setMat4("view", view);
-    scene.shader["skybox_shader"].setMat4("projection", projection);
-    // ... set view and projection matrix
-    glBindVertexArray(scene.VAO["skybox_vao"]);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["cubemapTexture"]);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    // glDepthFunc(GL_LESS); // set depth function back to default
-    glDepthMask(GL_TRUE);
+    // /****************************** 绘制 SkyBox 注意这个应该优先进行绘制******************************/
+    // glDepthMask(GL_FALSE);
+    // // glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    // scene.shader["skybox_shader"].use();
+    // // 这句很有意思～ mat4 转为 mat3 这使得model变换中的平移操作对当前的天空盒不产生影响，天空盒永远无限远
+    // view = glm::mat4(glm::mat3(glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp)));
+    // projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+    // scene.shader["skybox_shader"].setMat4("view", view);
+    // scene.shader["skybox_shader"].setMat4("projection", projection);
+    // // ... set view and projection matrix
+    // glBindVertexArray(scene.VAO["skybox_vao"]);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["cubemapTexture"]);
+    // glDrawArrays(GL_TRIANGLES, 0, 36);
+    // // glDepthFunc(GL_LESS); // set depth function back to default
+    // glDepthMask(GL_TRUE);
 
-    glBindVertexArray(0); // 解绑 VAO
+    // glBindVertexArray(0); // 解绑 VAO
 
     /****************************** 绘制模型 ******************************/
 
@@ -485,6 +485,23 @@ void scene_skybox_demo_loop(Scene scene)
 
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
+    glBindVertexArray(0); // 解绑 VAO
+
+    /****************************** 绘制 SkyBox 注意这个应该优先进行绘制******************************/
+    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    scene.shader["skybox_shader"].use();
+    // 这句很有意思～ mat4 转为 mat3 这使得model变换中的平移操作对当前的天空盒不产生影响，天空盒永远无限远
+    view = glm::mat4(glm::mat3(glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp)));
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+    scene.shader["skybox_shader"].setMat4("view", view);
+    scene.shader["skybox_shader"].setMat4("projection", projection);
+    // ... set view and projection matrix
+    glBindVertexArray(scene.VAO["skybox_vao"]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["cubemapTexture"]);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthFunc(GL_LESS); // set depth function back to default
+
     glBindVertexArray(0); // 解绑 VAO
 }
 
@@ -1483,7 +1500,6 @@ void simple_normal_mapping_demo_loop(Scene scene)
 
 void PBR_light_base_demo_loop(Scene scene)
 {
-
     // set clear frame color
     glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
     // glClear(GL_COLOR_BUFFER_BIT);
@@ -1757,3 +1773,306 @@ void renderSphere()
 }
 
 #pragma endregion
+
+void PBR_IBL_diffuse_demo_loop(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // lights
+    // ------
+    glm::vec3 lightPositions[] = {
+        glm::vec3(-10.0f, 10.0f, 10.0f),
+        glm::vec3(10.0f, 10.0f, 10.0f),
+        glm::vec3(-10.0f, -10.0f, 10.0f),
+        glm::vec3(10.0f, -10.0f, 10.0f),
+    };
+    glm::vec3 lightColors[] = {
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f)};
+    int nrRows = 7;
+    int nrColumns = 7;
+    float spacing = 2.5;
+
+    // initialize static shader uniforms before rendering
+    // --------------------------------------------------
+
+    // 定义 MVP 变换阵
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("projection", projection);
+
+    scene.shader["pbr_shader"].use();
+    scene.shader["pbr_shader"].setMat4("projection", projection);
+    scene.shader["pbr_shader"].setMat4("view", view);
+    scene.shader["pbr_shader"].setVec3("camPos", primary_cam.cameraPos);
+
+    // render rows*column number of spheres with varying metallic/roughness values scaled by rows and columns respectively
+    glm::mat4 model = glm::mat4(1.0f);
+    for (int row = 0; row < nrRows; ++row)
+    {
+        scene.shader["pbr_shader"].setFloat("metallic", (float)row / (float)nrRows);
+        for (int col = 0; col < nrColumns; ++col)
+        {
+            // we clamp the roughness to 0.025 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+            // on direct lighting.
+            scene.shader["pbr_shader"].setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
+
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(
+                                              (float)(col - (nrColumns / 2)) * spacing,
+                                              (float)(row - (nrRows / 2)) * spacing,
+                                              -2.0f));
+            scene.shader["pbr_shader"].setMat4("model", model);
+            scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+            renderSphere();
+        }
+    }
+    // render light source (simply re-render sphere at light positions)
+    // this looks a bit off as we use the same shader, but it'll make their positions obvious and
+    // keeps the codeprint small.
+    for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
+    {
+        glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
+        newPos = lightPositions[i];
+        scene.shader["pbr_shader"].setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
+        scene.shader["pbr_shader"].setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, newPos);
+        model = glm::scale(model, glm::vec3(0.5f));
+        scene.shader["pbr_shader"].setMat4("model", model);
+        scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        renderSphere();
+    }
+
+    /****************************** 绘制 skybox ******************************/
+    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    // render skybox (render as last to prevent overdraw)
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("view", view);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["envCubemap"]);
+    renderCube();
+    glDepthFunc(GL_LESS);
+}
+
+void PBR_IBL_diffuse_demo_loop_p2(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // lights
+    // ------
+    glm::vec3 lightPositions[] = {
+        glm::vec3(-10.0f, 10.0f, 10.0f),
+        glm::vec3(10.0f, 10.0f, 10.0f),
+        glm::vec3(-10.0f, -10.0f, 10.0f),
+        glm::vec3(10.0f, -10.0f, 10.0f),
+    };
+    glm::vec3 lightColors[] = {
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f)};
+    int nrRows = 7;
+    int nrColumns = 7;
+    float spacing = 2.5;
+
+    // initialize static shader uniforms before rendering
+    // --------------------------------------------------
+
+    // 定义 MVP 变换阵
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("projection", projection);
+
+    scene.shader["pbr_shader"].use();
+    scene.shader["pbr_shader"].setMat4("projection", projection);
+    scene.shader["pbr_shader"].setMat4("view", view);
+    scene.shader["pbr_shader"].setVec3("camPos", primary_cam.cameraPos);
+
+    // bind pre-computed IBL data
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["irradianceMap"]);
+
+    // render rows*column number of spheres with varying metallic/roughness values scaled by rows and columns respectively
+    glm::mat4 model = glm::mat4(1.0f);
+    for (int row = 0; row < nrRows; ++row)
+    {
+        scene.shader["pbr_shader"].setFloat("metallic", (float)row / (float)nrRows);
+        for (int col = 0; col < nrColumns; ++col)
+        {
+            // we clamp the roughness to 0.025 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+            // on direct lighting.
+            scene.shader["pbr_shader"].setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
+
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(
+                                              (float)(col - (nrColumns / 2)) * spacing,
+                                              (float)(row - (nrRows / 2)) * spacing,
+                                              -2.0f));
+            scene.shader["pbr_shader"].setMat4("model", model);
+            scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+            renderSphere();
+        }
+    }
+    // render light source (simply re-render sphere at light positions)
+    // this looks a bit off as we use the same shader, but it'll make their positions obvious and
+    // keeps the codeprint small.
+    for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
+    {
+        glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
+        newPos = lightPositions[i];
+        scene.shader["pbr_shader"].setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
+        scene.shader["pbr_shader"].setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, newPos);
+        model = glm::scale(model, glm::vec3(0.5f));
+        scene.shader["pbr_shader"].setMat4("model", model);
+        scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        renderSphere();
+    }
+
+    /****************************** 绘制 skybox ******************************/
+    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    // render skybox (render as last to prevent overdraw)
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("view", view);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["envCubemap"]);
+    renderCube();
+    glDepthFunc(GL_LESS);
+}
+
+void PBR_IBL_diffuse_demo_loop_ano(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // lights
+    // ------
+    glm::vec3 lightPositions[] = {
+        glm::vec3(-10.0f, 10.0f, 10.0f),
+        glm::vec3(10.0f, 10.0f, 10.0f),
+        glm::vec3(-10.0f, -10.0f, 10.0f),
+        glm::vec3(10.0f, -10.0f, 10.0f),
+    };
+    glm::vec3 lightColors[] = {
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f)};
+    int nrRows = 7;
+    int nrColumns = 7;
+    float spacing = 2.5;
+
+    // initialize static shader uniforms before rendering
+    // --------------------------------------------------
+
+    // 定义 MVP 变换阵
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("projection", projection);
+
+    scene.shader["pbr_shader"].use();
+    scene.shader["pbr_shader"].setMat4("projection", projection);
+    scene.shader["pbr_shader"].setMat4("view", view);
+    scene.shader["pbr_shader"].setVec3("camPos", primary_cam.cameraPos);
+
+    // bind pre-computed IBL data
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["irradianceMap"]);
+
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["albedoMap"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["normalMap"]);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["metallicMap"]);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["roughnessMap"]);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["aoMap"]);
+
+    // render rows*column number of spheres with varying metallic/roughness values scaled by rows and columns respectively
+    glm::mat4 model = glm::mat4(1.0f);
+    for (int row = 0; row < nrRows; ++row)
+    {
+        scene.shader["pbr_shader"].setFloat("metallic", (float)row / (float)nrRows);
+        // cout << "(float)row / (float)nrRows = " << (float)row / (float)nrRows << endl;
+        for (int col = 0; col < nrColumns; ++col)
+        {
+            // we clamp the roughness to 0.05 - 1.0 as perfectly smooth surfaces (roughness of 0.0) tend to look a bit off
+            // on direct lighting.
+            scene.shader["pbr_shader"].setFloat("roughness", glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f));
+            // cout << "glm::clamp((float)col / (float)nrColumns = " << glm::clamp((float)col / (float)nrColumns, 0.05f, 1.0f) << endl;
+
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(
+                                              (col - (nrColumns / 2)) * spacing,
+                                              (row - (nrRows / 2)) * spacing,
+                                              0.0f));
+            scene.shader["pbr_shader"].setMat4("model", model);
+            scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+            renderSphere();
+        }
+        // throw std::runtime_error("haha");
+    }
+
+    // render light source (simply re-render sphere at light positions)
+    // this looks a bit off as we use the same shader, but it'll make their positions obvious and
+    // keeps the codeprint small.
+    for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
+    {
+        glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
+        newPos = lightPositions[i];
+        scene.shader["pbr_shader"].setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
+        scene.shader["pbr_shader"].setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, newPos);
+        model = glm::scale(model, glm::vec3(0.5f));
+        scene.shader["pbr_shader"].setMat4("model", model);
+        scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        renderSphere();
+    }
+
+    /****************************** 绘制 skybox ******************************/
+    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    // render skybox (render as last to prevent overdraw)
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("view", view);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["envCubemap"]);
+    renderCube();
+    glDepthFunc(GL_LESS);
+}

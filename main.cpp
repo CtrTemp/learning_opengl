@@ -59,9 +59,11 @@ int main()
     // Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
     // Scene normal_mapping_scene = gen_simple_normal_mapping_scene();
     // Scene pbr_light_scene = gen_PBR_light_base_scene();
+    // Scene pbr_textured_scene = gen_PBR_light_textured_scene();
 
-    Scene pbr_textured_scene = gen_PBR_light_textured_scene();
-
+    // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene();
+    Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_p2();
+    // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_ano();
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -92,8 +94,11 @@ int main()
         // simple_normal_mapping_demo_loop(normal_mapping_scene);
         // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
         // PBR_light_base_demo_loop(pbr_light_scene);
+        // PBR_light_textured_demo_loop(pbr_textured_scene);
 
-        PBR_light_textured_demo_loop(pbr_textured_scene);
+        // PBR_IBL_diffuse_demo_loop(pbr_ibl_diffuse_scene);
+        PBR_IBL_diffuse_demo_loop_p2(pbr_ibl_diffuse_scene);
+        // PBR_IBL_diffuse_demo_loop_ano(pbr_ibl_diffuse_scene); // 想将金属球应用到 PBR-IBL 上，但失败了，再看一下原理再改
 
         glfwPollEvents();
         glfwSwapBuffers(window);
