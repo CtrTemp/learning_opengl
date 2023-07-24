@@ -2179,3 +2179,149 @@ void PBR_IBL_specular_demo_loop(Scene scene)
     renderCube();
     glDepthFunc(GL_LESS);
 }
+
+void PBR_IBL_textured_demo_loop(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // lights
+    // ------
+    glm::vec3 lightPositions[] = {
+        glm::vec3(-10.0f, 10.0f, 10.0f),
+        glm::vec3(10.0f, 10.0f, 10.0f),
+        glm::vec3(-10.0f, -10.0f, 10.0f),
+        glm::vec3(10.0f, -10.0f, 10.0f),
+    };
+    glm::vec3 lightColors[] = {
+        glm::vec3(300.0f, 00.0f, 00.0f),
+        glm::vec3(00.0f, 300.0f, 00.0f),
+        glm::vec3(00.0f, 00.0f, 300.0f),
+        glm::vec3(300.0f, 300.0f, 300.0f)};
+    int nrRows = 7;
+    int nrColumns = 7;
+    float spacing = 2.5;
+
+    // initialize static shader uniforms before rendering
+    // --------------------------------------------------
+
+    // 定义 MVP 变换阵
+    glm::mat4 projection = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    scene.shader["light_shader"].use();
+    scene.shader["light_shader"].setMat4("view", view);
+    scene.shader["light_shader"].setMat4("projection", projection);
+
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("projection", projection);
+
+    scene.shader["pbr_shader"].use();
+    scene.shader["pbr_shader"].setMat4("projection", projection);
+    scene.shader["pbr_shader"].setMat4("view", view);
+    scene.shader["pbr_shader"].setVec3("camPos", primary_cam.cameraPos);
+
+    // bind pre-computed IBL data
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["irradianceMap"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["prefilterMap"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["brdfLUTTexture"]);
+
+    // rusted iron
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["ironAlbedoMap"]);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["ironNormalMap"]);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["ironMetallicMap"]);
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["ironRoughnessMap"]);
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["ironAOMap"]);
+
+    model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(2.0f, 2.0f, 2.0f));
+    model = glm::translate(model, glm::vec3(-1.0, 0.0, 2.0));
+    scene.shader["pbr_shader"].setMat4("model", model);
+    scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+    renderSphere();
+
+    // gold
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["goldAlbedoMap"]);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["goldNormalMap"]);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["goldMetallicMap"]);
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["goldRoughnessMap"]);
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["goldAOMap"]);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0, -1.0, 2.0));
+    scene.shader["pbr_shader"].setMat4("model", model);
+    scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+    renderSphere();
+
+    // wall
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["wallAlbedoMap"]);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["wallNormalMap"]);
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["wallMetallicMap"]);
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["wallRoughnessMap"]);
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["wallAOMap"]);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0, 0.0, 0.0));
+    scene.shader["pbr_shader"].setMat4("model", model);
+    scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+    renderSphere();
+
+    // render light source (simply re-render sphere at light positions)
+    // this looks a bit off as we use the same shader, but it'll make their positions obvious and
+    // keeps the codeprint small.
+    for (unsigned int i = 0; i < sizeof(lightPositions) / sizeof(lightPositions[0]); ++i)
+    {
+        scene.shader["pbr_shader"].use();
+        glm::vec3 newPos = lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
+        newPos = lightPositions[i];
+        scene.shader["pbr_shader"].setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
+        scene.shader["pbr_shader"].setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+
+        scene.shader["light_shader"].use();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, newPos);
+        model = glm::scale(model, glm::vec3(0.15f));
+        scene.shader["light_shader"].setMat4("model", model);
+        scene.shader["light_shader"].setVec3("lightColor", lightColors[i]);
+        // scene.shader["light_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
+        renderSphere();
+    }
+
+    /****************************** 绘制 skybox ******************************/
+    glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
+    // render skybox (render as last to prevent overdraw)
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setMat4("view", view);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["envCubemap"]);
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["irradianceMap"]); // display irradiance map
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["prefilterMap"]); // display prefilter map
+    renderCube();
+    glDepthFunc(GL_LESS);
+}
