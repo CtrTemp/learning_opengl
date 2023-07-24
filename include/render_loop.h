@@ -62,4 +62,6 @@ void PBR_IBL_diffuse_demo_loop_p2(Scene scene);
 
 void PBR_IBL_diffuse_demo_loop_ano(Scene scene);
 
+void PBR_IBL_specular_demo_loop(Scene scene);
+
 #endif

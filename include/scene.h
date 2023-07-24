@@ -88,6 +88,10 @@ Scene gen_PBR_IBL_diffuse_scene();
 Scene gen_PBR_IBL_diffuse_scene_p2();
 Scene gen_PBR_IBL_diffuse_scene_ano();
 
+
+Scene gen_PBR_IBL_specular_scene();
+
 void renderCube_IBL();
+void renderQuad_IBL();
 
 #endif
