@@ -37,8 +37,6 @@ void blinn_phong_demo_loop(Scene scene);
 
 void shadow_mapping_demo_loop(Scene scene);
 
-
-
 void renderScene(Shader &shader, unsigned int VAO);
 void renderCube();
 void renderQuad();
@@ -47,13 +45,15 @@ void switch_shadow_mapping_demo_loop(Scene scene);
 
 void switch_shadow_mapping_demo_loop_p2(Scene scene);
 
-
 void renderScene_point_light(Shader &shader);
 void renderCube_point_light();
 
 void point_light_source_shadow_mapping_demo_loop(Scene scene);
 
-
 void simple_normal_mapping_demo_loop(Scene scene);
+
+void PBR_light_base_demo_loop(Scene scene);
+void PBR_light_textured_demo_loop(Scene scene);
+void renderSphere();
 
 #endif

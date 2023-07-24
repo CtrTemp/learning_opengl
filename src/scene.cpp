@@ -690,7 +690,6 @@ Scene gen_geometry_shader_scene()
 
     Scene scene;
 
-
     Shader house_shader = Shader(
         "../shaders/shader_file/geometry_base/geo.vert",
         "../shaders/shader_file/geometry_base/geo.frag",
@@ -1259,7 +1258,6 @@ Scene gen_offscreen_MSAA_scene_ano()
     // Other render option
     glEnable(GL_DEPTH_TEST); // enable depth test
 
-
     return scene;
 }
 
@@ -1648,10 +1646,9 @@ Scene switch_gen_shadow_mapping_scene()
     /**
      *  注意，对于这个 FBO 我们没有为其添加颜色附件，这会导致其不完备从而在后面的查验中报错（但实际上好像并不会）
      * 于是我们使用以下的两个语句告诉 OpenGL 我们创建的这个 FBO 并不需要对其进行绘制以及读取颜色缓冲区附件。
-     * */ 
+     * */
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
-
 
     // 检查创建 MSAA 对应的FBO的完备性
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -1830,7 +1827,7 @@ Scene gen_point_light_shadow_mapping_scene()
     glReadBuffer(GL_NONE);
     scene.textures.emplace("depthCubemap", depthCubemap);
 
-    // 绑定回屏幕默认的 FBO 
+    // 绑定回屏幕默认的 FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // 加载纹理
@@ -1919,6 +1916,80 @@ Scene gen_simple_normal_mapping_scene()
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
+Scene gen_PBR_light_base_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 0.0f, 20.0f};
+    primary_cam.cameraPos = cameraPos;
+
+    Shader pbr_shader = Shader(
+        "../shaders/shader_file/PBR/base/pbr.vert",
+        "../shaders/shader_file/PBR/base/pbr.frag");
+
+    scene.shader.emplace("pbr_shader", pbr_shader);
+
+    scene.shader["pbr_shader"].use();
+    scene.shader["pbr_shader"].setVec3("albedo", 0.5f, 0.0f, 0.0f);
+    scene.shader["pbr_shader"].setFloat("ao", 1.0f);
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
+Scene gen_PBR_light_textured_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 0.0f, 20.0f};
+    primary_cam.cameraPos = cameraPos;
+
+    Shader pbr_shader = Shader(
+        "../shaders/shader_file/PBR/textured_base/pbr.vert",
+        "../shaders/shader_file/PBR/textured_base/pbr.frag");
+
+    scene.shader.emplace("pbr_shader", pbr_shader);
+
+    scene.shader["pbr_shader"].use();
+    scene.shader["pbr_shader"].setInt("albedoMap", 0);
+    scene.shader["pbr_shader"].setInt("normalMap", 1);
+    scene.shader["pbr_shader"].setInt("metallicMap", 2);
+    scene.shader["pbr_shader"].setInt("roughnessMap", 3);
+    scene.shader["pbr_shader"].setInt("aoMap", 4);
+
+    unsigned int albedo = load_textures("../textures/PBR/mental_ball/rustediron2_basecolor.png");
+    unsigned int normal = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png");
+    unsigned int metallic = load_textures("../textures/PBR/mental_ball/rustediron2_metallic.png");
+    unsigned int roughness = load_textures("../textures/PBR/mental_ball/rustediron2_roughness.png");
+    unsigned int ao = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png");
+
+    scene.textures.emplace("albedoMap", albedo);
+    scene.textures.emplace("normalMap", normal);
+    scene.textures.emplace("metallicMap", metallic);
+    scene.textures.emplace("roughnessMap", roughness);
+    scene.textures.emplace("aoMap", ao);
     // depth test
     glEnable(GL_DEPTH_TEST); // enable depth test
     // Other render option

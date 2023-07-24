@@ -56,8 +56,12 @@ int main()
     // Scene shadow_scene = gen_shadow_mapping_scene();
     // Scene real_shadow_scene = switch_gen_shadow_mapping_scene();
     // Scene real_shadow_scene_p2 = switch_gen_shadow_mapping_scene_phase2();
-    Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
+    // Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
     // Scene normal_mapping_scene = gen_simple_normal_mapping_scene();
+    // Scene pbr_light_scene = gen_PBR_light_base_scene();
+
+    Scene pbr_textured_scene = gen_PBR_light_textured_scene();
+
 
     // main render loop
     while (!glfwWindowShouldClose(window))
@@ -84,8 +88,12 @@ int main()
         // shadow_mapping_demo_loop(shadow_scene);
         // switch_shadow_mapping_demo_loop(real_shadow_scene);
         // switch_shadow_mapping_demo_loop_p2(real_shadow_scene_p2);
-        point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
+        // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
         // simple_normal_mapping_demo_loop(normal_mapping_scene);
+        // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
+        // PBR_light_base_demo_loop(pbr_light_scene);
+
+        PBR_light_textured_demo_loop(pbr_textured_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);

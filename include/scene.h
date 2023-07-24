@@ -80,4 +80,8 @@ Scene gen_point_light_shadow_mapping_scene();
 
 Scene gen_simple_normal_mapping_scene();
 
+Scene gen_PBR_light_base_scene();
+
+Scene gen_PBR_light_textured_scene();
+
 #endif
