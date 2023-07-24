@@ -1625,7 +1625,7 @@ Scene switch_gen_shadow_mapping_scene()
     scene.FBO.emplace("depth_fbo", 0);
     glGenFramebuffers(1, &scene.FBO["depth_fbo"]);
 
-    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024; // 这个是深度图的分辨率
+    const unsigned int SHADOW_WIDTH = 1600, SHADOW_HEIGHT = 900; // 这个是深度图的分辨率
 
     // 创建深度图的纹理
     unsigned int depthMap;
@@ -1645,8 +1645,17 @@ Scene switch_gen_shadow_mapping_scene()
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]); // 绑定 FBO
     // 刚刚创建的深度图纹理作为深度缓冲附件
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+    /**
+     *  注意，对于这个 FBO 我们没有为其添加颜色附件，这会导致其不完备从而在后面的查验中报错（但实际上好像并不会）
+     * 于是我们使用以下的两个语句告诉 OpenGL 我们创建的这个 FBO 并不需要对其进行绘制以及读取颜色缓冲区附件。
+     * */ 
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+
+
+    // 检查创建 MSAA 对应的FBO的完备性
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << endl;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // 还原到窗口默认的附件
 
@@ -1687,11 +1696,6 @@ Scene switch_gen_shadow_mapping_scene_phase2()
     scene.shader.emplace("obj_shader", obj_shader);
     scene.shader.emplace("depth_shader", depth_shader);
     scene.shader.emplace("quad_shader", quad_shader);
-
-    // glm::vec3 dirLight_direction = {-1.2f, -1.0f, -0.5f};
-    // glm::vec3 dirLight_ambient = {0.05f, 0.05f, 0.05f};
-    // glm::vec3 dirLight_diffuse = {0.4f, 0.4f, 0.4f};
-    // glm::vec3 dirLight_specular = {0.5f, 0.5f, 0.5f};
 
     /************************ Plane Vao ************************/
     scene.VAO.emplace("plane_vao", 0);
@@ -1751,7 +1755,7 @@ Scene switch_gen_shadow_mapping_scene_phase2()
 
     scene.shader["obj_shader"].use();
     scene.shader["obj_shader"].setInt("diffuseTexture", 0);
-    scene.shader["obj_shader"].setInt("shadowMap", 1);
+    scene.shader["obj_shader"].setInt("depthMap", 1);
 
     scene.shader["quad_shader"].use();
     scene.shader["quad_shader"].setInt("depthMap", 0);
@@ -1802,7 +1806,7 @@ Scene gen_point_light_shadow_mapping_scene()
     // 创建深度图，但注意由于这次是点光源，所以我们应该创建一个立方体深度图 Cube Depth Map
     unsigned int depthCubemap;
     glGenTextures(1, &depthCubemap);
-    glBindTexture(GL_TEXTURE_2D, depthCubemap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
     for (GLuint i = 0; i < 6; ++i)
     {
@@ -1817,18 +1821,21 @@ Scene gen_point_light_shadow_mapping_scene()
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-    // attach depth texture as FBO's depth buffer
+    // 绑定到 depth buffer 的 FBO
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
+    // CubeMap 纹理将作为深度缓冲区组件被添加到 depth buffer 的 FBO 中
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+    // 声明当前的 FBO 不需要颜色附件
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
     scene.textures.emplace("depthCubemap", depthCubemap);
 
+    // 绑定回屏幕默认的 FBO 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // 加载纹理
-    unsigned int woodTexture = load_textures("../textures/floor.jpg");
-    scene.textures.emplace("woodTexture", woodTexture);
+    unsigned int diffuseTexture = load_textures("../textures/floor.jpg");
+    scene.textures.emplace("diffuseTexture", diffuseTexture);
 
     scene.shader["obj_shader"].use();
     scene.shader["obj_shader"].setInt("diffuseTexture", 0);

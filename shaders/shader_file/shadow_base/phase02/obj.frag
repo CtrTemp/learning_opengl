@@ -9,7 +9,7 @@ in VS_OUT {
 } fs_in;
 
 uniform sampler2D diffuseTexture;
-uniform sampler2D shadowMap;
+uniform sampler2D depthMap;
 
 uniform vec3 lightPos;
 uniform vec3 viewPos;
@@ -22,7 +22,7 @@ uniform vec3 viewPos;
 //     projCoords = projCoords * 0.5 + 0.5; // 从 [-1,1] 映射到 [0,1] 这是为了与 depthMap 中保持一致 
 //     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
 //     // 从深度图中取得从光源看过去该点最小的深度值
-//     float closestDepth = texture(shadowMap, projCoords.xy).r; 
+//     float closestDepth = texture(depthMap, projCoords.xy).r; 
 //     // get depth of current fragment from light's perspective
 //     // 在深度图中获取当前点从光源看过去实际的深度值
 //     float currentDepth = projCoords.z;
@@ -39,8 +39,8 @@ uniform vec3 viewPos;
 //     问题解释：
 //     首先，projCoords可以看作是一个连续的值
 //     那么 currentDepth 就是一个连续的值
-//     但由于depthMap/shadowMap的分辨率是有限的，这导致：多个不同的 projCoords.xy 采样 shadowMap得到的可能是同一个值
-//     于是 closestDepth 实际上是一个与 depthMap/shadowMap 的分辨率有关的离散值
+//     但由于depthMap/depthMap的分辨率是有限的，这导致：多个不同的 projCoords.xy 采样 depthMap得到的可能是同一个值
+//     于是 closestDepth 实际上是一个与 depthMap/depthMap 的分辨率有关的离散值
 //     那么 closestDepth 再与 currentDepth 进行比较时，就可能导致一个连续的 currentDepth 对应同一个 closestDepth进行比较
 //     这就会使得比较的值有一部分可能是大于的，一部分是小于的，于是就有了本应没有阴影的区域变成一部分有阴影，一部分没有阴影的效果
 // **/ 
@@ -49,7 +49,7 @@ uniform vec3 viewPos;
 //     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; // 除以 w 代表归一化
 //     // transform to [0,1] range
 //     projCoords = projCoords * 0.5 + 0.5;
-//     float closestDepth = texture(shadowMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
+//     float closestDepth = texture(depthMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
 //     float currentDepth = projCoords.z; // 从相机来看，当前点实际深度值
 
 //     // 通过添加一个简单的容错偏移来解决阴影失真
@@ -79,7 +79,7 @@ uniform vec3 viewPos;
 //     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; // 除以 w 代表归一化
 //     // transform to [0,1] range
 //     projCoords = projCoords * 0.5 + 0.5;
-//     float closestDepth = texture(shadowMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
+//     float closestDepth = texture(depthMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
 //     float currentDepth = projCoords.z; // 从相机来看，当前点实际深度值
     
 //     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
@@ -106,7 +106,7 @@ uniform vec3 viewPos;
 //     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; // 除以 w 代表归一化
 //     // transform to [0,1] range
 //     projCoords = projCoords * 0.5 + 0.5;
-//     float closestDepth = texture(shadowMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
+//     float closestDepth = texture(depthMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
 //     float currentDepth = projCoords.z; // 从相机来看，当前点实际深度值
 
 //     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
@@ -133,7 +133,7 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; // 除以 w 代表归一化
     // transform to [0,1] range
     projCoords = projCoords * 0.5 + 0.5;
-    float closestDepth = texture(shadowMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
+    float closestDepth = texture(depthMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
     float currentDepth = projCoords.z; // 从相机来看，当前点实际深度值
     // PCF
     float shadow = 0.0;
@@ -144,11 +144,11 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
         这个textureSize返回一个给定采样器纹理的0级mipmap的vec2类型的宽和高，这样 texelSize.x 和 texelSize.y 
     其实就是单位纹素在0～1空间的长度步进值。也就是下文中偏移采样的移动最小单元。
     */ 
-    vec2 texelSize = 1.0 / textureSize(shadowMap, 0); 
+    vec2 texelSize = 1.0 / textureSize(depthMap, 0); 
     // 深度图当前位置3*3的宫格内采样
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; // 采样点的深度
+            float pcfDepth = texture(depthMap, projCoords.xy + vec2(x, y) * texelSize).r; // 采样点的深度
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;  // 累加shadow
         }
     }

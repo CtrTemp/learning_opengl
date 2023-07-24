@@ -51,12 +51,12 @@ int main()
     // Scene planet_scene = gen_mars_simu_scene();
     // Scene MSAA_scene = gen_default_MSAA_scene();
     // Scene offscreen_MSAA_scene = gen_offscreen_MSAA_scene();
-    Scene offscreen_MSAA_scene = gen_offscreen_MSAA_scene_ano();
+    // Scene offscreen_MSAA_scene = gen_offscreen_MSAA_scene_ano();
     // Scene blinn_phong_scene = gen_test_Blinn_Phong_scene();
     // Scene shadow_scene = gen_shadow_mapping_scene();
     // Scene real_shadow_scene = switch_gen_shadow_mapping_scene();
     // Scene real_shadow_scene_p2 = switch_gen_shadow_mapping_scene_phase2();
-    // Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
+    Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
     // Scene normal_mapping_scene = gen_simple_normal_mapping_scene();
 
     // main render loop
@@ -79,12 +79,12 @@ int main()
         // planet_demo_loop(planet_scene);
         // MSAA_demo_loop(MSAA_scene);
         // offscreen_MSAA_loop(offscreen_MSAA_scene);
-        offscreen_MSAA_loop_ano(offscreen_MSAA_scene);
+        // offscreen_MSAA_loop_ano(offscreen_MSAA_scene);
         // blinn_phong_demo_loop(blinn_phong_scene);
         // shadow_mapping_demo_loop(shadow_scene);
         // switch_shadow_mapping_demo_loop(real_shadow_scene);
         // switch_shadow_mapping_demo_loop_p2(real_shadow_scene_p2);
-        // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
+        point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
         // simple_normal_mapping_demo_loop(normal_mapping_scene);
 
         glfwPollEvents();

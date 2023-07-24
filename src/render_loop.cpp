@@ -751,10 +751,9 @@ void offscreen_MSAA_loop(Scene scene)
      *  这次我们将 MSAA 渲染生成的数据输送到中间层 FBO 中，可以在它这里进行一次预处理。注意：实际上我们是将
      * 数据输送到了 intermediate_fbo 的颜色附件上，其实就是绑定在它上面的 screenTexture 。执行完下面的数据
      * 输送语句后 screenTexture 将被填充
-     * */ 
+     * */
     glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-    
     // 切换绑定，先切换到屏幕默认 FBO ，对其清屏
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -764,7 +763,7 @@ void offscreen_MSAA_loop(Scene scene)
     /**
      *  可以直接绘制，将 screenTexture 中的内容呈现在屏幕上。也可以使用这个 shader 进行对 screenTexture 的后处理，
      * 得到一些图片处理后的结果。（如灰度图、模糊）
-     * */ 
+     * */
     scene.shader["quad_shader"].use();
     glBindVertexArray(scene.VAO["quad_vao"]);
     glActiveTexture(GL_TEXTURE0);
@@ -819,7 +818,7 @@ void offscreen_MSAA_loop_ano(Scene scene)
     /**
      *  制定好以上规则后，便使用以下的 glBlitFramebuffer 函数将数据从 src 导入到 dst 中。
      * 在这里我们直接将数据输出到了屏幕默认的 Frame Buffer 中，于是就直接被呈现到屏幕了。
-     * */ 
+     * */
     glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
@@ -966,20 +965,26 @@ void switch_shadow_mapping_demo_loop(Scene scene)
     scene.shader["depth_shader"].use();
     scene.shader["depth_shader"].setMat4("lightSpaceMatrix", lightSpaceMatrix);
 
-    glViewport(0, 0, 1024, 1024);
+    glViewport(0, 0, 1600, 900);                               // 注意使用的分辨率应该和创建的深度/模板缓冲区附件一致
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]); // 切换绑定，接下来的操作将渲染到深度图 FBO 上
     glClear(GL_DEPTH_BUFFER_BIT);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["floor_texture"]);     // 既然是渲染深度图，那么这句话好像就没有什么必要，，，
-    renderScene(scene.shader["depth_shader"], scene.VAO["plane_vao"]); // 渲染深度图
+    /**
+     *  渲染深度图。绘制过程使用 depth shader 。
+     *  翻看这个 shader program 中的 fragmet shader 我们会发现其 main 函数中没有做任何事情。
+     * 这是因为我们没有对当前的 FBO 设置颜色缓冲区，也不需要对颜色进行绘制。我们只需要填充其 depth buffer 。
+     * 而 depth buffer 是在 fragment shader 中默认进行比较并填充的。
+     *  所以该阶段实际上只需要一个 vertex shader！执行完这个函数后，depth buffer 被默认填充，也就是
+     * 它对应的深度纹理 depthMap 被填充。下一个阶段我们将会可视化这个深度缓冲区，也就是把 depthMap 用另一个
+     * shader 画出来。
+     * */
+    renderScene(scene.shader["depth_shader"], scene.VAO["plane_vao"]);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // 切换回窗口默认的 Frame Buffer
-    // reset viewport
-    glViewport(0, 0, primary_cam.frame_width, primary_cam.frame_height); // 将窗口重置为摄像机窗口大小
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // 切换回摄像机窗口大小，因为接下来我们要向屏幕进行绘制了
+    glViewport(0, 0, primary_cam.frame_width, primary_cam.frame_height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // 清空屏幕默认 FBO 的颜色缓冲区以及深度缓冲区
 
-    // render Depth map to quad for visual debugging
-    // ---------------------------------------------
+    // 使用另一个 shader 将已经被填充好的 depthMap 绘制出来。达到可视化深度缓冲的效果
     scene.shader["quad_shader"].use(); // 切换回用于渲染FBO纹理的shader
     // 下面这两个参数用于将默认的非线性深度值还原为线性深度值，这需要我们直到最远平面、最近平面到1～0的映射
     scene.shader["quad_shader"].setFloat("near_plane", near_plane);
@@ -987,6 +992,10 @@ void switch_shadow_mapping_demo_loop(Scene scene)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["depthMap"]); // 激活纹理
     renderQuad();                                             // 渲染这个texture并且铺满屏幕
+    /**
+     *  这里额外提一句，看起来这个效果不是很真实，貌似是被拉长了。这是由于我们设置的depthMap与摄像机窗口的分辨率
+     * 不一致导致的。可以试着将其统一再查看其效果。（但好像没用？？这是为啥？？我们看到的真的是真实的深度缓冲么）
+     * */
 }
 
 void switch_shadow_mapping_demo_loop_p2(Scene scene)
@@ -999,7 +1008,7 @@ void switch_shadow_mapping_demo_loop_p2(Scene scene)
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glm::vec3 lightPos(-2.0f, 4.1f, -1.0f); // 这个之后要修改,改成平行光效果
+    glm::vec3 lightPos(-2.0f, 4.1f, -1.0f);
 
     glm::mat4 lightProjection, lightView;
     glm::mat4 lightSpaceMatrix;
@@ -1021,6 +1030,9 @@ void switch_shadow_mapping_demo_loop_p2(Scene scene)
     // 版本03：优化：剔除正面以解决绝大部分的 peter panning 问题，具体的问题描述在对应的 shader 文件中
     // （不过我这样设置后，好像情况也没什么太大改观，，，）
     glCullFace(GL_FRONT);
+    /**
+     *  执行完这步后，深度图将被渲染到 depth_fbo 的深度/模板缓冲区附件中，也就是 depthMap 这个 texture 被填充。
+     * */
     renderScene(scene.shader["depth_shader"], scene.VAO["plane_vao"]);
     glCullFace(GL_BACK); // 不要忘记设回原先的culling face
 
@@ -1250,7 +1262,7 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
     shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
 
-    // 第一步：还是从光源的角度看过去，以正交投影的方式绘制深度图
+    // 第一步：还是从光源的角度看过去，以透视投影的方式绘制深度图
 
     glViewport(0, 0, 1024, 1024);
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
@@ -1263,7 +1275,11 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     }
     scene.shader["depth_shader"].setFloat("far_plane", far_plane);
     scene.shader["depth_shader"].setVec3("lightPos", lightPos);
-    renderScene_point_light(scene.shader["depth_shader"]); // 将 depth map 渲染到 FBO
+    /**
+     *  这句执行后，深度图将被填充到 depth_fbo 的深度附件中。也就是？？
+     * 这里你还是没有搞明白，明天来了要一起看一下。
+     * */
+    renderScene_point_light(scene.shader["depth_shader"]);
 
     // 下面这部分是没有问题的，主要是上面的 depth map 没有值
 
@@ -1291,7 +1307,7 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     scene.shader["obj_shader"].setFloat("far_plane", far_plane);
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["woodTexture"]);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["diffuseTexture"]);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, scene.textures["depthCubemap"]);
     renderScene_point_light(scene.shader["obj_shader"]);
