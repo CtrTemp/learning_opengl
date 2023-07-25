@@ -11,6 +11,8 @@ aux_source_directory(./src SRC_LIST)#添加src目录下的所有源文件
 aux_source_directory(./shaders SRC_LIST)#添加 shaders 目录下的所有源文件
 aux_source_directory(./textures SRC_LIST)#添加 textures 目录下的所有源文件
 aux_source_directory(./models SRC_LIST)#添加 models 目录下的所有源文件
+aux_source_directory(./imgui SRC_LIST)#添加 imgui 目录下的所有源文件
+aux_source_directory(./imgui/third_party SRC_LIST)#添加 imgui 目录下的所有源文件
 
 include_directories(./ ./include)
 

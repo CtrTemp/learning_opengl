@@ -4,10 +4,17 @@
 #include "scene.h"
 #include "render_loop.h"
 
+#include "imgui/third_party/imgui_impl_glfw.h"
+#include "imgui/third_party/imgui_impl_opengl3.h"
+
+#include "imgui/scene_control.h"
+
 int main()
 {
     // glfw init
     glfwInit();
+    // GL 3.0 + GLSL 330
+    const char *glsl_version = "#version 330";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -23,6 +30,7 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1); // Enable vsync
 
     // glad init
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -62,20 +70,58 @@ int main()
     // Scene pbr_textured_scene = gen_PBR_light_textured_scene();
 
     // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene();
-    Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_p2();
+    // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_p2();
     // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_ano();
 
-    // Scene pbr_ibl_specular_scene = gen_PBR_IBL_specular_scene();
+    Scene pbr_ibl_specular_scene = gen_PBR_IBL_specular_scene();
 
     // Scene pbr_ibl_textured_scene = gen_PBR_IBL_textured_scene();
-    
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsLight();
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
+
+    // Our state
+    bool show_demo_window = false; // 这个先不用
+    bool show_another_window = false;
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // main render loop
     while (!glfwWindowShouldClose(window))
     {
-        // 按键交互
-        primary_keyboard_callback(window, primary_cam);
+        glfwPollEvents();
 
+        // Start the Dear ImGui frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
+        {
+            render_control();
+        }
+
+
+        // Rendering
+        ImGui::Render();
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+        glViewport(0, 0, display_w, display_h);
+        // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+        // glClear(GL_COLOR_BUFFER_BIT);
+        
         // demo 场景绘制
         // multi_rotating_cube_demo_loop(cube_scene);
         // scene_light_demo_loop(light_scene);
@@ -102,14 +148,19 @@ int main()
         // PBR_light_textured_demo_loop(pbr_textured_scene);
 
         // PBR_IBL_diffuse_demo_loop(pbr_ibl_diffuse_scene);
-        PBR_IBL_diffuse_demo_loop_p2(pbr_ibl_diffuse_scene);
+        // PBR_IBL_diffuse_demo_loop_p2(pbr_ibl_diffuse_scene);
         // PBR_IBL_diffuse_demo_loop_ano(pbr_ibl_diffuse_scene); // 想将金属球应用到 PBR-IBL 上，但失败了，再看一下原理再改
 
-        // PBR_IBL_specular_demo_loop(pbr_ibl_specular_scene);
-        
-        // PBR_IBL_textured_demo_loop(pbr_ibl_textured_scene);
+        PBR_IBL_specular_demo_loop(pbr_ibl_specular_scene);
 
-        glfwPollEvents();
+        // PBR_IBL_textured_demo_loop(pbr_ibl_textured_scene);
+        
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        // 按键交互
+        primary_keyboard_callback(window, primary_cam);
+
+
         glfwSwapBuffers(window);
     }
 

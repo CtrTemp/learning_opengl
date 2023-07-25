@@ -1959,8 +1959,8 @@ void PBR_IBL_diffuse_demo_loop_p2(Scene scene)
     scene.shader["background_shader"].use();
     scene.shader["background_shader"].setMat4("view", view);
     glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["envCubemap"]);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["irradianceMap"]);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["envCubemap"]);
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["irradianceMap"]);
     renderCube();
     glDepthFunc(GL_LESS);
 }
