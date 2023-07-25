@@ -2138,6 +2138,11 @@ Scene gen_PBR_IBL_diffuse_scene_p2()
     glm::vec3 cameraPos = {0.0f, 0.0f, 20.0f};
     primary_cam.cameraPos = cameraPos;
 
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL); // set depth function to less than AND equal for skybox depth trick.
+
     /********************************* Init Shader *********************************/
     Shader pbr_shader = Shader(
         "../shaders/shader_file/PBR/IBL_diffuse/p2/pbr.vert",
@@ -2156,6 +2161,7 @@ Scene gen_PBR_IBL_diffuse_scene_p2()
         "../shaders/shader_file/PBR/IBL_diffuse/p2/background.frag");
 
     scene.shader.emplace("pbr_shader", pbr_shader);
+    scene.shader.emplace("irradiance_shader", irradiance_shader);
     scene.shader.emplace("rect_to_cube_shader", rect_to_cube_shader);
     scene.shader.emplace("background_shader", background_shader);
 
@@ -2182,21 +2188,10 @@ Scene gen_PBR_IBL_diffuse_scene_p2()
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["captureRBO"]);
 
-    /********************************* Init FBO *********************************/
-
-    scene.VAO.emplace("skybox_vao", 0);
-    scene.VBO.emplace("skybox_vbo", 0);
-
-    glGenVertexArrays(1, &scene.VAO["skybox_vao"]);
-    glBindVertexArray(scene.VAO["skybox_vao"]);
-
-    glGenBuffers(1, &scene.VBO["skybox_vbo"]);
-    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["skybox_vbo"]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // 初始化数据
 
     /********************************* Load Texture *********************************/
 
-    unsigned int hdrTexture = load_HDR_textures("../textures/PBR/HDR/sea.jpg");
+    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/room.jpg");
     scene.textures.emplace("hdrTexture", hdrTexture);
 
     /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/
@@ -2257,7 +2252,7 @@ Scene gen_PBR_IBL_diffuse_scene_p2()
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
     for (unsigned int i = 0; i < 6; ++i)
     {
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 16, 16, 0, GL_RGB, GL_FLOAT, nullptr);
     }
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -2267,7 +2262,7 @@ Scene gen_PBR_IBL_diffuse_scene_p2()
 
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
     glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["captureRBO"]);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 16, 16);
 
     scene.textures.emplace("irradianceMap", irradianceMap);
 
@@ -2277,9 +2272,9 @@ Scene gen_PBR_IBL_diffuse_scene_p2()
     scene.shader["irradiance_shader"].setInt("environmentMap", 0);
     scene.shader["irradiance_shader"].setMat4("projection", captureProjection);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["envCubemap"]);
 
-    glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
+    glViewport(0, 0, 16, 16); // don't forget to configure the viewport to the capture dimensions.
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
     for (unsigned int i = 0; i < 6; ++i)
     {
@@ -2887,7 +2882,6 @@ Scene gen_PBR_IBL_textured_scene()
     scene.textures.emplace("wallRoughnessMap", wallRoughnessMap);
     scene.textures.emplace("wallAOMap", wallAOMap);
 
-
     /********************************* Init FBO *********************************/
 
     scene.FBO.emplace("captureFBO", 0);
@@ -2903,7 +2897,7 @@ Scene gen_PBR_IBL_textured_scene()
 
     /********************************* Load Texture *********************************/
 
-    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/sea.jpg");
+    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/room.jpg");
     scene.textures.emplace("hdrTexture", hdrTexture);
 
     /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/

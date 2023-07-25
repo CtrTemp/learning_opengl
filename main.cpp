@@ -62,12 +62,12 @@ int main()
     // Scene pbr_textured_scene = gen_PBR_light_textured_scene();
 
     // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene();
-    // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_p2();
+    Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_p2();
     // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_ano();
 
     // Scene pbr_ibl_specular_scene = gen_PBR_IBL_specular_scene();
 
-    Scene pbr_ibl_textured_scene = gen_PBR_IBL_textured_scene();
+    // Scene pbr_ibl_textured_scene = gen_PBR_IBL_textured_scene();
     
 
     // main render loop
@@ -102,12 +102,12 @@ int main()
         // PBR_light_textured_demo_loop(pbr_textured_scene);
 
         // PBR_IBL_diffuse_demo_loop(pbr_ibl_diffuse_scene);
-        // PBR_IBL_diffuse_demo_loop_p2(pbr_ibl_diffuse_scene);
+        PBR_IBL_diffuse_demo_loop_p2(pbr_ibl_diffuse_scene);
         // PBR_IBL_diffuse_demo_loop_ano(pbr_ibl_diffuse_scene); // 想将金属球应用到 PBR-IBL 上，但失败了，再看一下原理再改
 
         // PBR_IBL_specular_demo_loop(pbr_ibl_specular_scene);
         
-        PBR_IBL_textured_demo_loop(pbr_ibl_textured_scene);
+        // PBR_IBL_textured_demo_loop(pbr_ibl_textured_scene);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
