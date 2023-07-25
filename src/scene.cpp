@@ -303,7 +303,8 @@ Scene gen_load_model_scene()
     primary_cam.cameraPos = cameraPos;
 
     // model 场景生成
-    scene.model_obj.emplace("backpack", Model("../models/backpack.obj"));
+    scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
+    // scene.model_obj.emplace("backpack", Model("../models/gun/Cerberus_LP.FBX"));
     // shader 创建
 
     Shader obj_shader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");

@@ -4,7 +4,7 @@
 #include "global_include.h"
 #include "shaders/shaders.h"
 #include "gl_textures.h"
-#include "models/models.h"
+#include "models.h"
 #include "camera.h"
 
 // 创建一个场景，需要在本地创建，并导入到GPU中
