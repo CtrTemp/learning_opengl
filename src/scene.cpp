@@ -1878,46 +1878,23 @@ Scene gen_simple_normal_mapping_scene()
         "../shaders/shader_file/normal_map_base/base.vert",
         "../shaders/shader_file/normal_map_base/base.frag");
 
+    Shader light_shader = Shader(
+        "../shaders/shader_file/normal_map_base/light.vert",
+        "../shaders/shader_file/normal_map_base/light.frag");
+
     scene.shader.emplace("obj_shader", obj_shader);
-
-    scene.VAO.emplace("obj_vao", 0);
-    scene.VBO.emplace("base_vbo", 0);
-
-    /************************ 绑定场景物体 VAO ************************/
-    glGenVertexArrays(1, &scene.VAO["obj_vao"]);
-    glBindVertexArray(scene.VAO["obj_vao"]);
-
-    glGenBuffers(1, &scene.VBO["base_vbo"]);
-    glBindBuffer(GL_ARRAY_BUFFER, scene.VBO["base_vbo"]);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(planeVertices_normal), planeVertices_normal, GL_STATIC_DRAW); // 初始化数据
-
-    // 顶点位置
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
-
-    // 顶点法向量
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 3));
-    glEnableVertexAttribArray(1);
-
-    // 顶点纹理坐标
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(sizeof(float) * 6));
-    glEnableVertexAttribArray(2);
-
-    // 场景物体材质导入
-    scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
-    float shininess_item = 32.0f;     // 高光项表现力
-    scene.shader["obj_shader"].setFloat("material.shininess", shininess_item);
-    scene.shader["obj_shader"].setVec3("lightPos", glm::vec3(5.0f, 5.0f, 2.0f));
+    scene.shader.emplace("light_shader", light_shader);
 
     // 导入纹理
-    unsigned int brickwall_texture = load_textures("../textures/brickwall.jpg", true);
-    unsigned int brickwall_normal_texture = load_textures("../textures/brickwall_normal.jpg", true);
+    unsigned int diffuseMap = load_textures("../textures/brickwall.jpg", true);
+    unsigned int normalMap = load_textures("../textures/brickwall_normal.jpg", true);
 
-    scene.textures.emplace("brickwall_texture", brickwall_texture);
-    scene.textures.emplace("brickwall_normal_texture", brickwall_normal_texture);
+    scene.textures.emplace("diffuseMap", diffuseMap);
+    scene.textures.emplace("normalMap", normalMap);
 
-    scene.shader["obj_shader"].setInt("material.diffuse", 0);
-    scene.shader["obj_shader"].setInt("material.specular", 1);
+    scene.shader["obj_shader"].use();
+    scene.shader["obj_shader"].setInt("diffuseMap", 0);
+    scene.shader["obj_shader"].setInt("normalMap", 1);
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 

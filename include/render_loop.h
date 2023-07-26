@@ -51,6 +51,7 @@ void renderCube_point_light();
 void point_light_source_shadow_mapping_demo_loop(Scene scene);
 
 void simple_normal_mapping_demo_loop(Scene scene);
+void renderQuad_Normal();
 
 void PBR_light_base_demo_loop(Scene scene);
 void PBR_light_textured_demo_loop(Scene scene);
