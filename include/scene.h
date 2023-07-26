@@ -93,6 +93,8 @@ Scene gen_PBR_IBL_specular_scene();
 
 Scene gen_PBR_IBL_textured_scene();
 
+Scene gen_PBR_IBL_model_scene();
+
 void renderCube_IBL();
 void renderQuad_IBL();
 

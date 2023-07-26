@@ -85,8 +85,8 @@ Scene gen_multi_rotating_cube_scene()
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 
     // 导入纹理
-    unsigned int box_texture = load_textures("../textures/box.png");
-    unsigned int grass_texture = load_textures("../textures/grass.png");
+    unsigned int box_texture = load_textures("../textures/box.png", true);
+    unsigned int grass_texture = load_textures("../textures/grass.png", true);
 
     /*
         如果使用默认的 GL_REPEAT ,则 OpenGL 会对边缘的值和纹理下一个重复的值进行插值，但是由于我们使用了透明值，
@@ -96,7 +96,7 @@ Scene gen_multi_rotating_cube_scene()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    unsigned int transparent_texture = load_textures("../textures/transparent.png");
+    unsigned int transparent_texture = load_textures("../textures/transparent.png", true);
 
     scene.textures.emplace("box_texture", box_texture);
     scene.textures.emplace("grass_texture", grass_texture);
@@ -184,8 +184,8 @@ Scene gen_lighting_scene()
     scene.shader["obj_shader"].setFloat("material.shininess", shininess_item);
 
     // 导入纹理
-    unsigned int viking_texture = load_textures("../textures/viking_room.png");
-    unsigned int frame_texture = load_textures("../textures/rect.jpeg");
+    unsigned int viking_texture = load_textures("../textures/viking_room.png", true);
+    unsigned int frame_texture = load_textures("../textures/rect.jpeg", true);
 
     scene.textures.emplace("viking_texture", viking_texture);
     scene.textures.emplace("frame_texture", frame_texture);
@@ -303,8 +303,8 @@ Scene gen_load_model_scene()
     primary_cam.cameraPos = cameraPos;
 
     // model 场景生成
-    scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
-    // scene.model_obj.emplace("backpack", Model("../models/gun/Cerberus_LP.FBX"));
+    // scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
+    scene.model_obj.emplace("backpack", Model("../models/gun/Cerberus_LP.FBX"));
     // shader 创建
 
     Shader obj_shader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
@@ -448,7 +448,7 @@ Scene gen_framebuffer_scene()
     glEnableVertexAttribArray(2);
 
     // Load Textures
-    unsigned int box_texture = load_textures("../textures/box.png");
+    unsigned int box_texture = load_textures("../textures/box.png", true);
 
     scene.textures.emplace("box_texture", box_texture);
 
@@ -662,8 +662,6 @@ Scene gen_skybox_scene()
     scene.shader["skybox_shader"].use();
     scene.shader["skybox_shader"].setInt("cubemapTexture", 0);
 
-    // unsigned int box_texture = load_textures("../textures/box.png");
-    // scene.textures.emplace("box_texture", box_texture);
 
     scene.shader["base_shader"].use();
     scene.shader["base_shader"].setInt("cubemapTexture", 0);
@@ -1318,7 +1316,7 @@ Scene gen_test_Blinn_Phong_scene()
     scene.shader["obj_shader"].setFloat("material.shininess", shininess_item);
 
     // 导入纹理
-    unsigned int floor_texture = load_textures("../textures/floor.jpg");
+    unsigned int floor_texture = load_textures("../textures/floor.jpg", true);
 
     scene.textures.emplace("floor_texture", floor_texture);
 
@@ -1476,7 +1474,7 @@ Scene gen_shadow_mapping_scene()
     scene.shader["plane_shader"].setFloat("material.shininess", shininess_item);
 
     // 导入纹理
-    unsigned int floor_texture = load_textures("../textures/floor.jpg");
+    unsigned int floor_texture = load_textures("../textures/floor.jpg", true);
 
     scene.textures.emplace("floor_texture", floor_texture);
 
@@ -1520,7 +1518,7 @@ Scene gen_shadow_mapping_scene()
     scene.shader["cube_shader"].setFloat("material.shininess", shininess_item);
 
     // 导入纹理
-    unsigned int cube_texture = load_textures("../textures/floor.jpg");
+    unsigned int cube_texture = load_textures("../textures/floor.jpg", true);
 
     scene.textures.emplace("floor_texture", cube_texture);
 
@@ -1616,7 +1614,7 @@ Scene switch_gen_shadow_mapping_scene()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
     glBindVertexArray(0); // 解绑 VAO
 
-    unsigned int woodTexture = load_textures("../textures/floor.jpg");
+    unsigned int woodTexture = load_textures("../textures/floor.jpg", true);
 
     /************************ Depth Map ************************/
 
@@ -1715,7 +1713,7 @@ Scene switch_gen_shadow_mapping_scene_phase2()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
     glBindVertexArray(0); // 解绑 VAO
 
-    unsigned int woodTexture = load_textures("../textures/floor.jpg");
+    unsigned int woodTexture = load_textures("../textures/floor.jpg", true);
     scene.textures.emplace("woodTexture", woodTexture);
 
     /************************ Depth Map ************************/
@@ -1832,7 +1830,7 @@ Scene gen_point_light_shadow_mapping_scene()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // 加载纹理
-    unsigned int diffuseTexture = load_textures("../textures/floor.jpg");
+    unsigned int diffuseTexture = load_textures("../textures/floor.jpg", true);
     scene.textures.emplace("diffuseTexture", diffuseTexture);
 
     scene.shader["obj_shader"].use();
@@ -1906,8 +1904,8 @@ Scene gen_simple_normal_mapping_scene()
     scene.shader["obj_shader"].setVec3("lightPos", glm::vec3(5.0f, 5.0f, 2.0f));
 
     // 导入纹理
-    unsigned int brickwall_texture = load_textures("../textures/brickwall.jpg");
-    unsigned int brickwall_normal_texture = load_textures("../textures/brickwall_normal.jpg");
+    unsigned int brickwall_texture = load_textures("../textures/brickwall.jpg", true);
+    unsigned int brickwall_normal_texture = load_textures("../textures/brickwall_normal.jpg", true);
 
     scene.textures.emplace("brickwall_texture", brickwall_texture);
     scene.textures.emplace("brickwall_normal_texture", brickwall_normal_texture);
@@ -1980,11 +1978,11 @@ Scene gen_PBR_light_textured_scene()
     scene.shader["pbr_shader"].setInt("roughnessMap", 3);
     scene.shader["pbr_shader"].setInt("aoMap", 4);
 
-    unsigned int albedo = load_textures("../textures/PBR/mental_ball/rustediron2_basecolor.png");
-    unsigned int normal = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png");
-    unsigned int metallic = load_textures("../textures/PBR/mental_ball/rustediron2_metallic.png");
-    unsigned int roughness = load_textures("../textures/PBR/mental_ball/rustediron2_roughness.png");
-    unsigned int ao = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png");
+    unsigned int albedo = load_textures("../textures/PBR/mental_ball/rustediron2_basecolor.png", true);
+    unsigned int normal = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png", true);
+    unsigned int metallic = load_textures("../textures/PBR/mental_ball/rustediron2_metallic.png", true);
+    unsigned int roughness = load_textures("../textures/PBR/mental_ball/rustediron2_roughness.png", true);
+    unsigned int ao = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png", true);
 
     scene.textures.emplace("albedoMap", albedo);
     scene.textures.emplace("normalMap", normal);
@@ -2063,7 +2061,7 @@ Scene gen_PBR_IBL_diffuse_scene()
 
     /********************************* Load Texture *********************************/
 
-    unsigned int hdrTexture = load_HDR_textures("../textures/PBR/HDR/sea.jpg");
+    unsigned int hdrTexture = load_HDR_textures("../textures/PBR/HDR/sea.jpg", true);
     scene.textures.emplace("hdrTexture", hdrTexture);
 
     /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/
@@ -2189,10 +2187,9 @@ Scene gen_PBR_IBL_diffuse_scene_p2()
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["captureRBO"]);
 
-
     /********************************* Load Texture *********************************/
 
-    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/room.jpg");
+    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/room.jpg", true);
     scene.textures.emplace("hdrTexture", hdrTexture);
 
     /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/
@@ -2347,11 +2344,11 @@ Scene gen_PBR_IBL_diffuse_scene_ano()
     scene.shader["pbr_shader"].setInt("roughnessMap", 3);
     scene.shader["pbr_shader"].setInt("aoMap", 4);
 
-    unsigned int albedo = load_textures("../textures/PBR/mental_ball/rustediron2_basecolor.png");
-    unsigned int normal = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png");
-    unsigned int metallic = load_textures("../textures/PBR/mental_ball/rustediron2_metallic.png");
-    unsigned int roughness = load_textures("../textures/PBR/mental_ball/rustediron2_roughness.png");
-    unsigned int ao = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png");
+    unsigned int albedo = load_textures("../textures/PBR/mental_ball/rustediron2_basecolor.png", true);
+    unsigned int normal = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png", true);
+    unsigned int metallic = load_textures("../textures/PBR/mental_ball/rustediron2_metallic.png", true);
+    unsigned int roughness = load_textures("../textures/PBR/mental_ball/rustediron2_roughness.png", true);
+    unsigned int ao = load_textures("../textures/PBR/mental_ball/rustediron2_normal.png", true);
 
     scene.textures.emplace("albedoMap", albedo);
     scene.textures.emplace("normalMap", normal);
@@ -2389,7 +2386,7 @@ Scene gen_PBR_IBL_diffuse_scene_ano()
 
     /********************************* Load Texture *********************************/
 
-    unsigned int hdrTexture = load_HDR_textures("../textures/PBR/HDR/sea.jpg");
+    unsigned int hdrTexture = load_HDR_textures("../textures/PBR/HDR/sea.jpg", true);
     scene.textures.emplace("hdrTexture", hdrTexture);
 
     /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/
@@ -2570,7 +2567,7 @@ Scene gen_PBR_IBL_specular_scene()
 
     /********************************* Load HDR Texture *********************************/
 
-    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/sea.jpg");
+    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/sea.jpg", true);
     scene.textures.emplace("hdrTexture", hdrTexture);
 
     /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/
@@ -2837,34 +2834,22 @@ Scene gen_PBR_IBL_textured_scene()
     // load PBR material textures
     // --------------------------
     // rusted iron
-    unsigned int ironAlbedoMap = load_textures("../textures/PBR/beaten-up-metal1-ue/albedo.png");
-    unsigned int ironNormalMap = load_textures("../textures/PBR/beaten-up-metal1-ue/normal.png");
-    unsigned int ironMetallicMap = load_textures("../textures/PBR/beaten-up-metal1-ue/metallic.png");
-    unsigned int ironRoughnessMap = load_textures("../textures/PBR/beaten-up-metal1-ue/roughness.png");
-    unsigned int ironAOMap = load_textures("../textures/PBR/beaten-up-metal1-ue/ao.png");
+    unsigned int ironAlbedoMap = load_textures("../textures/PBR/beaten-up-metal1-ue/albedo.png", true);
+    unsigned int ironNormalMap = load_textures("../textures/PBR/beaten-up-metal1-ue/normal.png", true);
+    unsigned int ironMetallicMap = load_textures("../textures/PBR/beaten-up-metal1-ue/metallic.png", true);
+    unsigned int ironRoughnessMap = load_textures("../textures/PBR/beaten-up-metal1-ue/roughness.png", true);
+    unsigned int ironAOMap = load_textures("../textures/PBR/beaten-up-metal1-ue/ao.png", true);
     scene.textures.emplace("ironAlbedoMap", ironAlbedoMap);
     scene.textures.emplace("ironNormalMap", ironNormalMap);
     scene.textures.emplace("ironMetallicMap", ironMetallicMap);
     scene.textures.emplace("ironRoughnessMap", ironRoughnessMap);
     scene.textures.emplace("ironAOMap", ironAOMap);
-
-    // unsigned int ironAlbedoMap = load_textures("../textures/PBR/vines-ue/albedo.png");
-    // unsigned int ironNormalMap = load_textures("../textures/PBR/vines-ue/normal.png");
-    // unsigned int ironMetallicMap = load_textures("../textures/PBR/vines-ue/metallic.png");
-    // unsigned int ironRoughnessMap = load_textures("../textures/PBR/vines-ue/roughness.png");
-    // unsigned int ironAOMap = load_textures("../textures/PBR/vines-ue/ao.png");
-    // scene.textures.emplace("ironAlbedoMap", ironAlbedoMap);
-    // scene.textures.emplace("ironNormalMap", ironNormalMap);
-    // scene.textures.emplace("ironMetallicMap", ironMetallicMap);
-    // scene.textures.emplace("ironRoughnessMap", ironRoughnessMap);
-    // scene.textures.emplace("ironAOMap", ironAOMap);
-
     // gold
-    unsigned int goldAlbedoMap = load_textures("../textures/PBR/gold/albedo.png");
-    unsigned int goldNormalMap = load_textures("../textures/PBR/gold/normal.png");
-    unsigned int goldMetallicMap = load_textures("../textures/PBR/gold/metallic.png");
-    unsigned int goldRoughnessMap = load_textures("../textures/PBR/gold/roughness.png");
-    unsigned int goldAOMap = load_textures("../textures/PBR/gold/void_ao.png");
+    unsigned int goldAlbedoMap = load_textures("../textures/PBR/gold/albedo.png", true);
+    unsigned int goldNormalMap = load_textures("../textures/PBR/gold/normal.png", true);
+    unsigned int goldMetallicMap = load_textures("../textures/PBR/gold/metallic.png", true);
+    unsigned int goldRoughnessMap = load_textures("../textures/PBR/gold/roughness.png", true);
+    unsigned int goldAOMap = load_textures("../textures/PBR/gold/void_ao.png", true);
     scene.textures.emplace("goldAlbedoMap", goldAlbedoMap);
     scene.textures.emplace("goldNormalMap", goldNormalMap);
     scene.textures.emplace("goldMetallicMap", goldMetallicMap);
@@ -2872,11 +2857,11 @@ Scene gen_PBR_IBL_textured_scene()
     scene.textures.emplace("goldAOMap", goldAOMap);
 
     // wall
-    unsigned int wallAlbedoMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/albedo.png");
-    unsigned int wallNormalMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/normal.png");
-    unsigned int wallMetallicMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/metallic.png");
-    unsigned int wallRoughnessMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/roughness.png");
-    unsigned int wallAOMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/ao.png");
+    unsigned int wallAlbedoMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/albedo.png", true);
+    unsigned int wallNormalMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/normal.png", true);
+    unsigned int wallMetallicMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/metallic.png", true);
+    unsigned int wallRoughnessMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/roughness.png", true);
+    unsigned int wallAOMap = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/ao.png", true);
     scene.textures.emplace("wallAlbedoMap", wallAlbedoMap);
     scene.textures.emplace("wallNormalMap", wallNormalMap);
     scene.textures.emplace("wallMetallicMap", wallMetallicMap);
@@ -2898,7 +2883,310 @@ Scene gen_PBR_IBL_textured_scene()
 
     /********************************* Load Texture *********************************/
 
-    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/room.jpg");
+    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/room.jpg", true);
+    scene.textures.emplace("hdrTexture", hdrTexture);
+
+    /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/
+
+    unsigned int envCubemap; // 注意一下看看这个是否需要导入 texture emplace
+    glGenTextures(1, &envCubemap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    scene.textures.emplace("envCubemap", envCubemap);
+
+    // pbr: set up projection and view matrices for capturing data onto the 6 cubemap face directions
+    // ----------------------------------------------------------------------------------------------
+    glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+    glm::mat4 captureViews[] =
+        {
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
+            glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))};
+
+    // pbr: convert HDR equirectangular environment map to cubemap equivalent
+    // ----------------------------------------------------------------------
+    scene.shader["rect_to_cube_shader"].use();
+    scene.shader["rect_to_cube_shader"].setInt("equirectangularMap", 0);
+    scene.shader["rect_to_cube_shader"].setMat4("projection", captureProjection);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["hdrTexture"]);
+
+    glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        scene.shader["rect_to_cube_shader"].setMat4("view", captureViews[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        renderCube_IBL();
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // then let OpenGL generate mipmaps from first mip face (combatting visible dots artifact)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+    // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance scale.
+    // --------------------------------------------------------------------------------
+    unsigned int irradianceMap;
+    glGenTextures(1, &irradianceMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["captureRBO"]);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+    scene.textures.emplace("irradianceMap", irradianceMap);
+
+    // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
+    // -----------------------------------------------------------------------------
+    scene.shader["irradiance_shader"].use();
+    scene.shader["irradiance_shader"].setInt("environmentMap", 0);
+    scene.shader["irradiance_shader"].setMat4("projection", captureProjection);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+
+    glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        scene.shader["irradiance_shader"].setMat4("view", captureViews[i]);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        renderCube_IBL();
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //
+    //
+    //
+    //
+    //
+
+    // pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter scale.
+    // --------------------------------------------------------------------------------
+    unsigned int prefilterMap;
+    glGenTextures(1, &prefilterMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr);
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // be sure to set minification filter to mip_linear
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // generate mipmaps for the cubemap so OpenGL automatically allocates the required memory.
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+    scene.textures.emplace("prefilterMap", prefilterMap);
+
+    // pbr: run a quasi monte-carlo simulation on the environment lighting to create a prefilter (cube)map.
+    // ----------------------------------------------------------------------------------------------------
+    scene.shader["pre_filter_shader"].use();
+    scene.shader["pre_filter_shader"].setInt("environmentMap", 0);
+    scene.shader["pre_filter_shader"].setMat4("projection", captureProjection);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
+    unsigned int maxMipLevels = 5;
+    for (unsigned int mip = 0; mip < maxMipLevels; ++mip)
+    {
+        // reisze framebuffer according to mip-level size.
+        unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+        unsigned int mipHeight = static_cast<unsigned int>(128 * std::pow(0.5, mip));
+        glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["captureRBO"]);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
+        glViewport(0, 0, mipWidth, mipHeight);
+
+        float roughness = (float)mip / (float)(maxMipLevels - 1);
+        scene.shader["pre_filter_shader"].setFloat("roughness", roughness);
+        for (unsigned int i = 0; i < 6; ++i)
+        {
+            scene.shader["pre_filter_shader"].setMat4("view", captureViews[i]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
+
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            renderCube_IBL();
+        }
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // pbr: generate a 2D LUT from the BRDF equations used.
+    // ----------------------------------------------------
+    unsigned int brdfLUTTexture;
+    glGenTextures(1, &brdfLUTTexture);
+
+    // pre-allocate enough memory for the LUT texture.
+    glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+    // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    scene.textures.emplace("brdfLUTTexture", brdfLUTTexture);
+
+    // then re-configure capture framebuffer object and render screen-space quad with BRDF shader.
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["captureRBO"]);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
+
+    glViewport(0, 0, 512, 512);
+    scene.shader["brdf_shader"].use();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    renderQuad_IBL();
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //
+    //
+    //
+    //
+    //
+
+    /****************************  ****************************/
+    // then before rendering, configure the viewport to the original framebuffer's screen dimensions
+    glViewport(0, 0, primary_cam.frame_width, primary_cam.frame_height);
+
+    // Other render option
+    glEnable(GL_DEPTH_TEST); // enable depth test
+
+    // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // 使用默认模式绘制几何
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    return scene;
+}
+
+Scene gen_PBR_IBL_model_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    glm::vec3 cameraPos = {12.0f, 2.37f, 37.27f};
+    glm::vec3 cameraFront = {-0.370f, -0.080f, -0.925f};
+    primary_cam.cameraPos = cameraPos;
+    primary_cam.cameraFront = cameraFront;
+
+    /********************************* Init Shader *********************************/
+    Shader pbr_shader = Shader(
+        "../shaders/shader_file/PBR/IBL_textured/pbr.vert",
+        "../shaders/shader_file/PBR/IBL_textured/pbr.frag");
+
+    Shader light_shader = Shader(
+        "../shaders/shader_file/PBR/IBL_textured/light.vert",
+        "../shaders/shader_file/PBR/IBL_textured/light.frag");
+
+    Shader rect_to_cube_shader = Shader(
+        "../shaders/shader_file/PBR/IBL_textured/rect_to_cube.vert",
+        "../shaders/shader_file/PBR/IBL_textured/rect_to_cube.frag");
+
+    Shader irradiance_shader = Shader(
+        "../shaders/shader_file/PBR/IBL_textured/irradiance.vert",
+        "../shaders/shader_file/PBR/IBL_textured/irradiance.frag");
+
+    Shader pre_filter_shader = Shader(
+        "../shaders/shader_file/PBR/IBL_textured/filter.vert",
+        "../shaders/shader_file/PBR/IBL_textured/filter.frag");
+
+    Shader brdf_shader = Shader(
+        "../shaders/shader_file/PBR/IBL_textured/brdf.vert",
+        "../shaders/shader_file/PBR/IBL_textured/brdf.frag");
+
+    Shader background_shader = Shader(
+        "../shaders/shader_file/PBR/IBL_textured/background.vert",
+        "../shaders/shader_file/PBR/IBL_textured/background.frag");
+
+    scene.shader.emplace("pbr_shader", pbr_shader);
+    scene.shader.emplace("light_shader", light_shader);
+    scene.shader.emplace("rect_to_cube_shader", rect_to_cube_shader);
+    scene.shader.emplace("irradiance_shader", irradiance_shader);
+    scene.shader.emplace("pre_filter_shader", pre_filter_shader);
+    scene.shader.emplace("brdf_shader", brdf_shader);
+    scene.shader.emplace("background_shader", background_shader);
+
+    /********************************* Init Uniform Buffer *********************************/
+
+    scene.shader["pbr_shader"].use();
+
+    scene.shader["pbr_shader"].setInt("irradianceMap", 0);
+    scene.shader["pbr_shader"].setInt("prefilterMap", 1);
+    scene.shader["pbr_shader"].setInt("brdfLUT", 2);
+    scene.shader["pbr_shader"].setInt("albedoMap", 3);
+    scene.shader["pbr_shader"].setInt("normalMap", 4);
+    scene.shader["pbr_shader"].setInt("metallicMap", 5);
+    scene.shader["pbr_shader"].setInt("roughnessMap", 6);
+    scene.shader["pbr_shader"].setInt("aoMap", 7);
+
+    scene.shader["background_shader"].use();
+    scene.shader["background_shader"].setInt("environmentMap", 0);
+
+    /********************************* Load Model *********************************/
+    scene.model_obj.emplace("gun", Model("../models/gun/Cerberus_LP.FBX"));
+    // scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
+
+    /********************************* Load PBR Texture *********************************/
+    // 这里我们只能手动读取纹理了～
+    // load PBR material textures
+    // --------------------------
+    // The GUN
+    unsigned int gunAlbedoMap = load_textures("../textures/PBR/gun/albedo.png", false);
+    unsigned int gunNormalMap = load_textures("../textures/PBR/gun/normal.png", false);
+    unsigned int gunMetallicMap = load_textures("../textures/PBR/gun/metallic.png", false);
+    unsigned int gunRoughnessMap = load_textures("../textures/PBR/gun/roughness.png", false);
+    unsigned int gunAOMap = load_textures("../textures/PBR/gun/void_ao.png", false);
+    scene.textures.emplace("gunAlbedoMap", gunAlbedoMap);
+    scene.textures.emplace("gunNormalMap", gunNormalMap);
+    scene.textures.emplace("gunMetallicMap", gunMetallicMap);
+    scene.textures.emplace("gunRoughnessMap", gunRoughnessMap);
+    scene.textures.emplace("gunAOMap", gunAOMap);
+
+    /********************************* Init FBO *********************************/
+
+    scene.FBO.emplace("captureFBO", 0);
+    scene.RBO.emplace("captureRBO", 0);
+
+    glGenFramebuffers(1, &scene.FBO["captureFBO"]);
+    glGenRenderbuffers(1, &scene.RBO["captureRBO"]);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["captureFBO"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["captureRBO"]);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["captureRBO"]);
+
+    /********************************* Load HDR Texture *********************************/
+
+    unsigned int hdrTexture = load_HDR_textures("../textures/HDR/room.jpg", true);
     scene.textures.emplace("hdrTexture", hdrTexture);
 
     /**************************** 设置 Cube Map 将绘制到哪个 FBO ****************************/

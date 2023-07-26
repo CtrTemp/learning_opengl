@@ -86,16 +86,16 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
         // specular: texture_specularN
         // normal: texture_normalN
 
-        // 1. diffuse maps
+        // 1. diffuse maps （albedo）
         vector<Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
         textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
-        // 2. specular maps
+        // 2. specular maps （metallic）
         vector<Texture> specularMaps = loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
-        // 3. normal maps
+        // 3. normal maps （normal）
         std::vector<Texture> normalMaps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
         textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
-        // 4. height maps
+        // 4. height maps （roughness？？）
         std::vector<Texture> heightMaps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
         textures.insert(textures.end(), heightMaps.begin(), heightMaps.end());
     }

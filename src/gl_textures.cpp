@@ -14,13 +14,22 @@ vector<std::string> faces{
 // unsigned int cubemapTexture = loadCubemap(faces);
 
 // 文中提到确实这样导入的纹理数据是上下颠倒的，，
-unsigned int load_textures(std::string texture_src)
+unsigned int load_textures(std::string texture_src, bool vertical_flip)
 {
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    stbi_set_flip_vertically_on_load(true); // 使用这个语句将在读入纹理时将其上下颠倒。
+    stbi_set_flip_vertically_on_load(vertical_flip); // 使用这个语句将在读入纹理时将其上下颠倒。
+
+    for (size_t i = 0; i < texture_src.size(); i++)
+    {
+        if (texture_src[i] == '\\')
+        {
+            texture_src[i] = '/';
+        }
+    }
+
     unsigned char *data = stbi_load(texture_src.c_str(), &width, &height, &nrComponents, 0);
     if (data)
     {
@@ -45,20 +54,29 @@ unsigned int load_textures(std::string texture_src)
     }
     else
     {
-        std::cout << "Texture failed to load at path: " << texture_src << std::endl;
+        std::cout << "Own loader : Texture failed to load at path: " << texture_src << std::endl;
         stbi_image_free(data);
     }
 
     return textureID;
 }
 
-unsigned int load_HDR_textures(std::string texture_src)
+unsigned int load_HDR_textures(std::string texture_src, bool vertical_flip)
 {
     unsigned int HDRtextureID;
     glGenTextures(1, &HDRtextureID);
 
     int width, height, nrComponents;
-    stbi_set_flip_vertically_on_load(true); // 使用这个语句将在读入纹理时将其上下颠倒。
+    stbi_set_flip_vertically_on_load(vertical_flip); // 使用这个语句将在读入纹理时将其上下颠倒。
+
+    for (size_t i = 0; i < texture_src.size(); i++)
+    {
+        if (texture_src[i] == '\\')
+        {
+            texture_src[i] = '/';
+        }
+    }
+
     float *data = stbi_loadf(texture_src.c_str(), &width, &height, &nrComponents, 0);
     if (data)
     {
@@ -74,7 +92,7 @@ unsigned int load_HDR_textures(std::string texture_src)
     }
     else
     {
-        std::cout << "Texture failed to load at path: " << texture_src << std::endl;
+        std::cout << "HDR loader : Texture failed to load at path: " << texture_src << std::endl;
         stbi_image_free(data);
     }
 
@@ -121,7 +139,20 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
 
     int width, height, nrComponents;
     stbi_set_flip_vertically_on_load(true); // 使用这个语句将在读入纹理时将其上下颠倒。
+
+    // 这里需要注意以下反斜杠的问题，Linux 系统下无法正确识别，故在此做替换
+    for (size_t i = 0; i < filename.size(); i++)
+    {
+        if (filename[i] == '\\')
+        {
+            filename[i] = '/';
+        }
+    }
+
+    // 修正后再进行读取一般就可以得到正确的读取结果，不再会报错找不到文件。
     unsigned char *data = stbi_load(filename.c_str(), &width, &height, &nrComponents, 0);
+
+    // throw std::runtime_error("ha");
     if (data)
     {
         GLenum format;
@@ -145,7 +176,7 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
     }
     else
     {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
+        std::cout << "Temp loader : Texture failed to load at path: " << path << std::endl;
         stbi_image_free(data);
     }
 

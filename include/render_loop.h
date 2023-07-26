@@ -66,4 +66,6 @@ void PBR_IBL_specular_demo_loop(Scene scene);
 
 void PBR_IBL_textured_demo_loop(Scene scene);
 
+void PBR_IBL_model_demo_loop(Scene scene);
+
 #endif

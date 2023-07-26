@@ -73,9 +73,11 @@ int main()
     // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_p2();
     // Scene pbr_ibl_diffuse_scene = gen_PBR_IBL_diffuse_scene_ano();
 
-    Scene pbr_ibl_specular_scene = gen_PBR_IBL_specular_scene();
+    // Scene pbr_ibl_specular_scene = gen_PBR_IBL_specular_scene();
 
     // Scene pbr_ibl_textured_scene = gen_PBR_IBL_textured_scene();
+
+    Scene pbr_ibl_model_scene = gen_PBR_IBL_model_scene();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -108,11 +110,12 @@ int main()
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        ImGui::SetNextWindowSize(ImVec2(400, 300)); // 宽400 高300
+
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             render_control();
         }
-
 
         // Rendering
         ImGui::Render();
@@ -121,7 +124,7 @@ int main()
         glViewport(0, 0, display_w, display_h);
         // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         // glClear(GL_COLOR_BUFFER_BIT);
-        
+
         // demo 场景绘制
         // multi_rotating_cube_demo_loop(cube_scene);
         // scene_light_demo_loop(light_scene);
@@ -151,15 +154,16 @@ int main()
         // PBR_IBL_diffuse_demo_loop_p2(pbr_ibl_diffuse_scene);
         // PBR_IBL_diffuse_demo_loop_ano(pbr_ibl_diffuse_scene); // 想将金属球应用到 PBR-IBL 上，但失败了，再看一下原理再改
 
-        PBR_IBL_specular_demo_loop(pbr_ibl_specular_scene);
+        // PBR_IBL_specular_demo_loop(pbr_ibl_specular_scene);
 
         // PBR_IBL_textured_demo_loop(pbr_ibl_textured_scene);
-        
+
+        PBR_IBL_model_demo_loop(pbr_ibl_model_scene);
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // 按键交互
         primary_keyboard_callback(window, primary_cam);
-
 
         glfwSwapBuffers(window);
     }
