@@ -64,7 +64,7 @@ int main()
     // Scene shadow_scene = gen_shadow_mapping_scene();
     // Scene real_shadow_scene = switch_gen_shadow_mapping_scene();
     // Scene real_shadow_scene_p2 = switch_gen_shadow_mapping_scene_phase2();
-    // Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
+    Scene point_light_shadow_scene = gen_point_light_shadow_mapping_scene();
     // Scene normal_mapping_scene = gen_simple_normal_mapping_scene();
     // Scene pbr_light_scene = gen_PBR_light_base_scene();
     // Scene pbr_textured_scene = gen_PBR_light_textured_scene();
@@ -77,7 +77,7 @@ int main()
 
     // Scene pbr_ibl_textured_scene = gen_PBR_IBL_textured_scene();
 
-    Scene pbr_ibl_model_scene = gen_PBR_IBL_model_scene();
+    // Scene pbr_ibl_model_scene = gen_PBR_IBL_model_scene();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -114,7 +114,7 @@ int main()
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            render_control();
+            // render_control();
         }
 
         // Rendering
@@ -144,7 +144,7 @@ int main()
         // shadow_mapping_demo_loop(shadow_scene);
         // switch_shadow_mapping_demo_loop(real_shadow_scene);
         // switch_shadow_mapping_demo_loop_p2(real_shadow_scene_p2);
-        // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
+        point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
         // simple_normal_mapping_demo_loop(normal_mapping_scene);
         // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
         // PBR_light_base_demo_loop(pbr_light_scene);
@@ -158,7 +158,7 @@ int main()
 
         // PBR_IBL_textured_demo_loop(pbr_ibl_textured_scene);
 
-        PBR_IBL_model_demo_loop(pbr_ibl_model_scene);
+        // PBR_IBL_model_demo_loop(pbr_ibl_model_scene);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

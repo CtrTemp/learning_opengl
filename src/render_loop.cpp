@@ -1258,18 +1258,17 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
 
     // 点光源定位
     glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
-    // // 光源位置随着时间进行移动
+    // 光源位置随着时间进行移动
     lightPos.z = static_cast<float>(sin(glfwGetTime() * 1.5) * 3.0);
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    float aspect = (float)primary_cam.frame_width / (float)primary_cam.frame_height;
     float near_plane = 1.0f;
     float far_plane = 25.0f;
 
     // 点光源 projection 矩阵
-    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), aspect, near_plane, far_plane);
+    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)1024 / (float)1024, near_plane, far_plane);
 
     // 点光源 view 矩阵（6个面）
     std::vector<glm::mat4> shadowTransforms;
@@ -1327,7 +1326,7 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["diffuseTexture"]);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, scene.textures["depthCubemap"]);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["depthCubemap"]);
     renderScene_point_light(scene.shader["obj_shader"]);
 }
 
@@ -2327,7 +2326,6 @@ void PBR_IBL_textured_demo_loop(Scene scene)
     glDepthFunc(GL_LESS);
 }
 
-
 void PBR_IBL_model_demo_loop(Scene scene)
 {
     // set clear frame color
@@ -2349,7 +2347,6 @@ void PBR_IBL_model_demo_loop(Scene scene)
         glm::vec3(00.0f, 300.0f, 00.0f),
         glm::vec3(00.0f, 00.0f, 300.0f),
         glm::vec3(300.0f, 300.0f, 300.0f)};
-        
 
     // initialize static shader uniforms before rendering
     // --------------------------------------------------
@@ -2404,7 +2401,6 @@ void PBR_IBL_model_demo_loop(Scene scene)
     scene.shader["pbr_shader"].setMat3("normalMatrix", glm::transpose(glm::inverse(glm::mat3(model))));
     // renderSphere();
     scene.model_obj["gun"].Draw(scene.shader["pbr_shader"]);
-
 
     // render light source (simply re-render sphere at light positions)
     // this looks a bit off as we use the same shader, but it'll make their positions obvious and

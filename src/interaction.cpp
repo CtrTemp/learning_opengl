@@ -11,6 +11,8 @@ float lastFrame = 0.0f; // Time of last frame
 // window resize callback
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
+    primary_cam.frame_width = width;
+    primary_cam.frame_height = height;
     glViewport(0, 0, width, height);
 }
 
@@ -105,10 +107,10 @@ void KeyBoard::keyboard_callback(GLFWwindow *window, Camera &cam)
 {
     // // middle speed
     // float cameraSpeed = 2.5f * deltaTime;
-    // // fast speed
-    // float cameraSpeed = 5.0f * deltaTime;
-    // vary fast speed
-    float cameraSpeed = 15.0f * deltaTime;
+    // fast speed
+    float cameraSpeed = 5.0f * deltaTime;
+    // // vary fast speed
+    // float cameraSpeed = 15.0f * deltaTime;
     // // hyper fast speed
     // float cameraSpeed = 50.0f * deltaTime;
 

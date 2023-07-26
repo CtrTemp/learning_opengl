@@ -662,7 +662,6 @@ Scene gen_skybox_scene()
     scene.shader["skybox_shader"].use();
     scene.shader["skybox_shader"].setInt("cubemapTexture", 0);
 
-
     scene.shader["base_shader"].use();
     scene.shader["base_shader"].setInt("cubemapTexture", 0);
 
@@ -1772,6 +1771,11 @@ Scene gen_point_light_shadow_mapping_scene()
     // 更改背景色
     scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
     // 相机初始化坐标更改
     glm::vec3 cameraPos = {0.0f, 0.0f, 0.0f};
     primary_cam.cameraPos = cameraPos;
@@ -1795,7 +1799,7 @@ Scene gen_point_light_shadow_mapping_scene()
     // configure depth map FBO
     // -----------------------
 
-    const GLuint SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+    const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 
     scene.FBO.emplace("depth_fbo", 0);
     glGenFramebuffers(1, &scene.FBO["depth_fbo"]);
@@ -1803,12 +1807,15 @@ Scene gen_point_light_shadow_mapping_scene()
     unsigned int depthCubemap;
     glGenTextures(1, &depthCubemap);
     glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+    scene.textures.emplace("depthCubemap", depthCubemap);
 
-    for (GLuint i = 0; i < 6; ++i)
+    vector<int> convert_idx = {0, 1, 2, 3, 4, 5};
+
+    for (unsigned int i = 0; i < 6; ++i)
     {
         // 注意这里在GPU上创建了6张深度图
         // GL_TEXTURE_CUBE_MAP_POSITIVE_X + i 对应了立方体的六个面
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + convert_idx[i], 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -1820,11 +1827,10 @@ Scene gen_point_light_shadow_mapping_scene()
     // 绑定到 depth buffer 的 FBO
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
     // CubeMap 纹理将作为深度缓冲区组件被添加到 depth buffer 的 FBO 中
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, scene.textures["depthCubemap"], 0);
     // 声明当前的 FBO 不需要颜色附件
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
-    scene.textures.emplace("depthCubemap", depthCubemap);
 
     // 绑定回屏幕默认的 FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1837,11 +1843,11 @@ Scene gen_point_light_shadow_mapping_scene()
     scene.shader["obj_shader"].setInt("diffuseTexture", 0);
     scene.shader["obj_shader"].setInt("depthMap", 1);
 
-    // depth test
-    glEnable(GL_DEPTH_TEST); // enable depth test
-    // Other render option
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+    // // depth test
+    // glEnable(GL_DEPTH_TEST); // enable depth test
+    // // Other render option
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
 
     return scene;
 }
