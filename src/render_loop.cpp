@@ -1081,16 +1081,6 @@ void switch_shadow_mapping_demo_loop_p2(Scene scene)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, scene.textures["depthMap"]); // 注意这里的 depthMap 是第一步生成的
     renderScene(scene.shader["obj_shader"], scene.VAO["plane_vao"]);
-
-    // // 以下的渲染就变得没必要了，因为上一步我们直接渲染到了屏幕
-    // // render Depth map to quad for visual debugging
-    // // ---------------------------------------------
-    // scene.shader["quad_shader"].use();
-    // scene.shader["quad_shader"].setFloat("near_plane", near_plane);
-    // scene.shader["quad_shader"].setFloat("far_plane", far_plane);
-    // glActiveTexture(GL_TEXTURE0);
-    // glBindTexture(GL_TEXTURE_2D, scene.textures["depthMap"]);
-    // renderQuad();
 }
 
 #pragma region
@@ -1259,7 +1249,7 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     // 点光源定位
     glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
     // 光源位置随着时间进行移动
-    lightPos.z = static_cast<float>(sin(glfwGetTime() * 1.5) * 3.0);
+    lightPos.z = static_cast<float>(sin(glfwGetTime() * 1.5) * 4.5);
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1293,12 +1283,9 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     scene.shader["depth_shader"].setFloat("far_plane", far_plane);
     scene.shader["depth_shader"].setVec3("lightPos", lightPos);
     /**
-     *  这句执行后，深度图将被填充到 depth_fbo 的深度附件中。也就是？？
-     * 这里你还是没有搞明白，明天来了要一起看一下。
+     *  使用 depth shader 绘制一遍场景，深度图将被更新到你创建并绑定在 depth fbo 深度附件中的纹理中。
      * */
     renderScene_point_light(scene.shader["depth_shader"]);
-
-    // 下面这部分是没有问题的，主要是上面的 depth map 没有值
 
     // 绑定回窗口默认的 FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -1306,12 +1293,15 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     glViewport(0, 0, primary_cam.frame_width, primary_cam.frame_height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // 第二步：正常绘制场景，将其渲染到屏幕，这里为和能渲染出阴影，主要是 shader 通过计算并对比深度值做到的
+    // 第二步：正常绘制场景，将其渲染到屏幕，这里为什么能渲染出阴影，主要是 shader 通过计算并对比深度值做到的
     // 以下是正常 camera 视角下的 MVP 变换阵设置
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);
 
-    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    // view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+
+    // 定向看光源
+    view = glm::lookAt(primary_cam.cameraPos, lightPos, primary_cam.cameraUp);
     projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
     scene.shader["obj_shader"].use();
     scene.shader["obj_shader"].setMat4("projection", projection);
@@ -1328,6 +1318,16 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["depthCubemap"]);
     renderScene_point_light(scene.shader["obj_shader"]);
+
+    /******************************* 绘制光源 *******************************/
+    scene.shader["light_shader"].use();
+    scene.shader["light_shader"].setMat4("projection", projection);
+    scene.shader["light_shader"].setMat4("view", view);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, lightPos); // 注意顺序，先 translate 再 scale
+    model = glm::scale(model, glm::vec3(0.05));
+    scene.shader["light_shader"].setMat4("model", model);
+    renderSphere();
 }
 
 #pragma region
@@ -1487,7 +1487,7 @@ void simple_normal_mapping_demo_loop(Scene scene)
     glBindTexture(GL_TEXTURE_2D, scene.textures["normalMap"]);
     renderQuad_Normal();
 
-    // render light source 
+    // render light source
     scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
     model = glm::mat4(1.0f);
     model = glm::translate(model, lightPos);

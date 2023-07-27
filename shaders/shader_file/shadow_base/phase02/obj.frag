@@ -26,10 +26,8 @@ uniform vec3 viewPos;
 //     // get depth of current fragment from light's perspective
 //     // 在深度图中获取当前点从光源看过去实际的深度值
 //     float currentDepth = projCoords.z;
-    
 
 //     float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
-
 
 //     return shadow;
 // }
@@ -81,7 +79,7 @@ uniform vec3 viewPos;
 //     projCoords = projCoords * 0.5 + 0.5;
 //     float closestDepth = texture(depthMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
 //     float currentDepth = projCoords.z; // 从相机来看，当前点实际深度值
-    
+
 //     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
 //     float bias = max(0.05 * (1.0 - dot(fs_in.Normal, lightDir)), 0.005);
 //     float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
@@ -129,13 +127,13 @@ uniform vec3 viewPos;
 次生结果接着结合在一起，进行平均化，我们就得到了柔和阴影。
 **/ 
 float ShadowCalculation(vec4 fragPosLightSpace) {
-    // perform perspective divide
+    // 光源看过去的2D屏幕空间坐标
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w; // 除以 w 代表归一化
-    // transform to [0,1] range
+    // 将以上坐标从-1～1转换到0～1
     projCoords = projCoords * 0.5 + 0.5;
-    float closestDepth = texture(depthMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
+    // float closestDepth = texture(depthMap, projCoords.xy).r; // 从光源来看，当前点对应的最小深度值 
     float currentDepth = projCoords.z; // 从相机来看，当前点实际深度值
-    // PCF
+    // PCF （percentage closer filtering）
     float shadow = 0.0;
     vec3 lightDir = normalize(lightPos - fs_in.FragPos);
     float bias = max(0.05 * (1.0 - dot(fs_in.Normal, lightDir)), 0.005);
@@ -148,11 +146,18 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
     // 深度图当前位置3*3的宫格内采样
     for(int x = -1; x <= 1; ++x) {
         for(int y = -1; y <= 1; ++y) {
+            /*
+                pfc depth 是偏移后的 closest depth，分别上下左右各偏移一个 texel 单位
+            */
             float pcfDepth = texture(depthMap, projCoords.xy + vec2(x, y) * texelSize).r; // 采样点的深度
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;  // 累加shadow
         }
     }
-    shadow /= 9.0; // 求平均得到软阴影（严格来讲其实这并不能算作是软阴影，，，软阴影的定义并非如此）
+    
+    // 求平均得到软阴影（严格来讲其实这并不能算作是软阴影，，，软阴影的定义并非如此）
+    // 这里得到的其实是当前 fragment 可能为阴影的一个概率密度值，概率越大则阴影颜色越深。
+    shadow /= 9.0; 
+    
 
     if(projCoords.z > 1.0)
         shadow = 0.0;

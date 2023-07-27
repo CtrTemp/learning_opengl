@@ -1684,13 +1684,9 @@ Scene switch_gen_shadow_mapping_scene_phase2()
         "../shaders/shader_file/shadow_base/phase02/depth.vert",
         "../shaders/shader_file/shadow_base/phase02/depth.frag");
 
-    Shader quad_shader = Shader(
-        "../shaders/shader_file/shadow_base/phase02/quad.vert",
-        "../shaders/shader_file/shadow_base/phase02/quad.frag");
 
     scene.shader.emplace("obj_shader", obj_shader);
     scene.shader.emplace("depth_shader", depth_shader);
-    scene.shader.emplace("quad_shader", quad_shader);
 
     /************************ Plane Vao ************************/
     scene.VAO.emplace("plane_vao", 0);
@@ -1712,6 +1708,8 @@ Scene switch_gen_shadow_mapping_scene_phase2()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
     glBindVertexArray(0); // 解绑 VAO
 
+
+    /************************ Load Texture ************************/
     unsigned int woodTexture = load_textures("../textures/floor.jpg", true);
     scene.textures.emplace("woodTexture", woodTexture);
 
@@ -1752,9 +1750,6 @@ Scene switch_gen_shadow_mapping_scene_phase2()
     scene.shader["obj_shader"].setInt("diffuseTexture", 0);
     scene.shader["obj_shader"].setInt("depthMap", 1);
 
-    scene.shader["quad_shader"].use();
-    scene.shader["quad_shader"].setInt("depthMap", 0);
-
     // depth test
     glEnable(GL_DEPTH_TEST); // enable depth test
     // Other render option
@@ -1784,12 +1779,17 @@ Scene gen_point_light_shadow_mapping_scene()
         "../shaders/shader_file/shadow_base/point_light/obj.vert",
         "../shaders/shader_file/shadow_base/point_light/obj.frag");
 
+    Shader light_shader = Shader(
+        "../shaders/shader_file/shadow_base/point_light/light.vert",
+        "../shaders/shader_file/shadow_base/point_light/light.frag");
+
     Shader depth_shader = Shader(
         "../shaders/shader_file/shadow_base/point_light/depth.vert",
         "../shaders/shader_file/shadow_base/point_light/depth.frag",
         "../shaders/shader_file/shadow_base/point_light/depth.geom");
 
     scene.shader.emplace("obj_shader", obj_shader);
+    scene.shader.emplace("light_shader", light_shader);
     scene.shader.emplace("depth_shader", depth_shader);
 
     /************************ Depth Map ************************/
@@ -1809,13 +1809,11 @@ Scene gen_point_light_shadow_mapping_scene()
     glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
     scene.textures.emplace("depthCubemap", depthCubemap);
 
-    vector<int> convert_idx = {0, 1, 2, 3, 4, 5};
-
     for (unsigned int i = 0; i < 6; ++i)
     {
         // 注意这里在GPU上创建了6张深度图
         // GL_TEXTURE_CUBE_MAP_POSITIVE_X + i 对应了立方体的六个面
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + convert_idx[i], 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     }
 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
