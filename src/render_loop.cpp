@@ -1773,6 +1773,12 @@ void deferred_shading_demo_loop(Scene scene)
     // blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
     // the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the
     // depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
+    /**
+     *  这里是重点！！可能作者的代码也不完全正确，这取决于你的系统对 depth buffer 的编码类型？默认数据传输和储存方式不匹配？？？
+     *  重看这里。。
+     * */ 
+    
+    
     glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
