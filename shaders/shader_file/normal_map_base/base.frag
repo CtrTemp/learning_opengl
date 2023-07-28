@@ -4,9 +4,9 @@ out vec4 FragColor;
 in VS_OUT {
     vec3 FragPos;
     vec2 TexCoords;
-    vec3 TangentLightPos;
-    vec3 TangentViewPos;
-    vec3 TangentFragPos;
+    vec3 TangentLightPos;   // 切线空间中的光源位置
+    vec3 TangentViewPos;    // 切线空间中的观察点位置
+    vec3 TangentFragPos;    // 切线空间中的片段位置（通过光栅化插值得到）
 } fs_in;
 
 uniform sampler2D diffuseMap;
@@ -20,7 +20,7 @@ void main() {
     // 从法线贴图中获取当前 fragment 对应的法线方向
     vec3 normal = texture(normalMap, fs_in.TexCoords).rgb;
     // 将法线映射到-1～1空间后归一化，也就是在切线空间的法向量，这一步是为啥？没理解
-    //  之前有提到过这种映射么?
+    // 之前有提到过这种映射么?
     normal = normalize(normal * 2.0 - 1.0);  // this normal is in tangent space
 
     // get diffuse color

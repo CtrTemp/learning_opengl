@@ -1329,7 +1329,7 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
      *  可见应用顺序依次为 translate rotate scale
      *  其实 rotate 和 scale 的顺序是无关的，因为二者都是齐次变换，
      *  只要它们都放在 translate 这种非齐次变换之前就可以。
-     * */ 
+     * */
     model = glm::translate(model, lightPos);
     model = glm::scale(model, glm::vec3(0.05));
     scene.shader["light_shader"].setMat4("model", model);
@@ -1531,7 +1531,7 @@ void renderQuad_Normal()
         /**
          *  预设平面中两个三角形的 切线向量 和 副切线向量 我们在CPU端进行TBN的计算，并将对应坐标轴的向量
          * 随顶点数据传入GPU。
-         * */ 
+         * */
         glm::vec3 tangent1, bitangent1;
         glm::vec3 tangent2, bitangent2;
         // 对第一个三角形进行计算
@@ -1539,16 +1539,19 @@ void renderQuad_Normal()
 
         /**
          *  先得到三角形的任意两条边，再根据以下的公式解方程组
-         *  
+         *
          *  edge1 = deltaU1*T + deltaV1*B
          *  edge2 = deltaU2*T + deltaV2*B
-         * 
+         *
          *  deltaU1 + deltaU2 = 1.0
          *  deltaV1 + deltaV2 = 1.0
-         * 
+         *
+         *  deltaUV1 对应法线贴图 edge1 的斜边向量
+         *  deltaUV2 对应法线贴图 edge2 的斜边向量
+         *
          *  最终解矩阵可以优化成以下的形式，中间推导略过
-         * */ 
-        glm::vec3 edge1 = pos2 - pos1; 
+         * */
+        glm::vec3 edge1 = pos2 - pos1;
         glm::vec3 edge2 = pos3 - pos1;
         glm::vec2 deltaUV1 = uv2 - uv1;
         glm::vec2 deltaUV2 = uv3 - uv1;

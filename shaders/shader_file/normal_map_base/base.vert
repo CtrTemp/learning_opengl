@@ -35,11 +35,14 @@ void main() {
     T = normalize(T - dot(T, N) * N);
     vec3 B = cross(N, T);
 
-    // 组装形成 TBN 矩阵
+    // 组装形成 TBN 矩阵的逆矩阵（由于是正交矩阵，所以直接求转置就是求逆）
     mat3 TBN = transpose(mat3(T, B, N));
 
-    // 以下的做法是将光源、摄像机、片段的位置通过 TBN 矩阵将其转换到了正确相对位置的世界空间坐标系下计算。
-    // 注意，以上的 TBN 矩阵已经融合了 model 变换，且已经去除了平移带来的影响，只有旋转与缩放。
+    /*
+        以下的做法是将光源、摄像机、片段的位置通过 TBN 矩阵的逆矩阵将其转换到了正确相对位置的切线空间坐标系
+    下计算。注意，以上的 TBN 矩阵已经融合了 model 变换，且已经去除了平移带来的影响，只有旋转与缩放。因为我们
+    在 vs_out.FragPos 中已经正确设置了方向，在这一步变换我们只需要考虑方向即可。
+    */
     vs_out.TangentLightPos = TBN * lightPos;
     vs_out.TangentViewPos = TBN * viewPos;
     vs_out.TangentFragPos = TBN * vs_out.FragPos;
