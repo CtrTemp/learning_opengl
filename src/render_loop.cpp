@@ -1506,6 +1506,60 @@ void simple_normal_mapping_demo_loop(Scene scene)
     glBindVertexArray(0); // 解除 VAO 绑定
 }
 
+void simple_height_mapping_demo_loop(Scene scene)
+{
+    glm::vec3 lightPos(0.5f, 1.0f, 0.3f);
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 定义 MVP 变换阵
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+    // model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+
+    /******************************** 绘制物体 ********************************/
+
+    // 先将 view 和 projection 两个矩阵导入 shader
+
+    scene.shader["obj_shader"].use(); // 以下对 obj shader 进行配置
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setMat4("view", view);
+    scene.shader["obj_shader"].setMat4("projection", projection);
+
+    // 观察者位置（相机位置）
+    scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
+    scene.shader["obj_shader"].setVec3("lightPos", lightPos);
+
+    float heightScale = 0.1f;                                        // 调整深度/高度范围
+    scene.shader["obj_shader"].setFloat("heightScale", heightScale); // adjust with Q and E keys
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["diffuseMap"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["normalMap"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["heightMap"]);
+    renderQuad_Normal();
+
+    // render light source
+    scene.shader["light_shader"].use(); // 以下对 light shader 进行配置
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, lightPos);
+    model = glm::scale(model, glm::vec3(0.1f));
+    scene.shader["light_shader"].setMat4("model", model);
+    scene.shader["light_shader"].setMat4("view", view);
+    scene.shader["light_shader"].setMat4("projection", projection);
+    renderSphere();
+
+    glBindVertexArray(0); // 解除 VAO 绑定
+}
+
 #pragma region
 // renders a 1x1 quad in NDC with manually calculated tangent vectors
 // ------------------------------------------------------------------
@@ -1561,10 +1615,12 @@ void renderQuad_Normal()
         tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
         tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
         tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+        tangent1 = glm::normalize(tangent1);
 
         bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
         bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
         bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+        bitangent1 = glm::normalize(bitangent1);
 
         // triangle 2
         // ----------
@@ -1578,10 +1634,12 @@ void renderQuad_Normal()
         tangent2.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
         tangent2.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
         tangent2.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+        tangent2 = glm::normalize(tangent2);
 
         bitangent2.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
         bitangent2.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
         bitangent2.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+        bitangent2 = glm::normalize(bitangent2);
 
         float quadVertices[] = {
             // positions            // normal         // texcoords  // tangent                          // bitangent

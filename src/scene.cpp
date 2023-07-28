@@ -1905,6 +1905,56 @@ Scene gen_simple_normal_mapping_scene()
     return scene;
 }
 
+Scene gen_simple_height_mapping_scene()
+{
+
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 0.0f, 3.0f};
+    primary_cam.cameraPos = cameraPos;
+
+    Shader obj_shader = Shader(
+        "../shaders/shader_file/height_map_base/base.vert",
+        "../shaders/shader_file/height_map_base/base.frag");
+
+    Shader light_shader = Shader(
+        "../shaders/shader_file/height_map_base/light.vert",
+        "../shaders/shader_file/height_map_base/light.frag");
+
+    scene.shader.emplace("obj_shader", obj_shader);
+    scene.shader.emplace("light_shader", light_shader);
+
+    // 导入纹理
+    unsigned int diffuseMap = load_textures("../textures/height_mapping/bricks2.jpg", true);
+    unsigned int normalMap = load_textures("../textures/height_mapping/bricks2_normal.jpg", true);
+    unsigned int heightMap = load_textures("../textures/height_mapping/bricks2_disp.jpg", true);
+
+    scene.textures.emplace("diffuseMap", diffuseMap);
+    scene.textures.emplace("normalMap", normalMap);
+    scene.textures.emplace("heightMap", heightMap);
+
+    scene.shader["obj_shader"].use();
+    scene.shader["obj_shader"].setInt("diffuseMap", 0);
+    scene.shader["obj_shader"].setInt("normalMap", 1);
+    scene.shader["obj_shader"].setInt("heightMap", 2);
+
+    glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
+
+
 Scene gen_PBR_light_base_scene()
 {
     Scene scene;
