@@ -1324,7 +1324,13 @@ void point_light_source_shadow_mapping_demo_loop(Scene scene)
     scene.shader["light_shader"].setMat4("projection", projection);
     scene.shader["light_shader"].setMat4("view", view);
     glm::mat4 model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPos); // 注意顺序，先 translate 再 scale
+    /**
+     *  这里重新说一下模型变换的顺序。 M_model = M_t * M_r * M_s;
+     *  可见应用顺序依次为 translate rotate scale
+     *  其实 rotate 和 scale 的顺序是无关的，因为二者都是齐次变换，
+     *  只要它们都放在 translate 这种非齐次变换之前就可以。
+     * */ 
+    model = glm::translate(model, lightPos);
     model = glm::scale(model, glm::vec3(0.05));
     scene.shader["light_shader"].setMat4("model", model);
     renderSphere();
@@ -1466,7 +1472,7 @@ void simple_normal_mapping_demo_loop(Scene scene)
     glm::mat4 projection = glm::mat4(1.0f);
     view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
     projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
-    model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+    // model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
 
     /******************************** 绘制物体 ********************************/
 
@@ -1522,12 +1528,27 @@ void renderQuad_Normal()
         // normal vector
         glm::vec3 nm(0.0f, 0.0f, 1.0f);
 
-        // calculate tangent/bitangent vectors of both triangles
+        /**
+         *  预设平面中两个三角形的 切线向量 和 副切线向量 我们在CPU端进行TBN的计算，并将对应坐标轴的向量
+         * 随顶点数据传入GPU。
+         * */ 
         glm::vec3 tangent1, bitangent1;
         glm::vec3 tangent2, bitangent2;
-        // triangle 1
+        // 对第一个三角形进行计算
         // ----------
-        glm::vec3 edge1 = pos2 - pos1;
+
+        /**
+         *  先得到三角形的任意两条边，再根据以下的公式解方程组
+         *  
+         *  edge1 = deltaU1*T + deltaV1*B
+         *  edge2 = deltaU2*T + deltaV2*B
+         * 
+         *  deltaU1 + deltaU2 = 1.0
+         *  deltaV1 + deltaV2 = 1.0
+         * 
+         *  最终解矩阵可以优化成以下的形式，中间推导略过
+         * */ 
+        glm::vec3 edge1 = pos2 - pos1; 
         glm::vec3 edge2 = pos3 - pos1;
         glm::vec2 deltaUV1 = uv2 - uv1;
         glm::vec2 deltaUV2 = uv3 - uv1;
