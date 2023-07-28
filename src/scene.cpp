@@ -1940,7 +1940,7 @@ Scene gen_simple_height_mapping_scene()
     scene.shader["obj_shader"].use();
     scene.shader["obj_shader"].setInt("diffuseMap", 0);
     scene.shader["obj_shader"].setInt("normalMap", 1);
-    scene.shader["obj_shader"].setInt("heightMap", 2);
+    scene.shader["obj_shader"].setInt("depthMap", 2);
 
     glBindVertexArray(0); // 解绑VAO，防止在其他地方错误配置它
 

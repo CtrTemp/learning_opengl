@@ -1536,7 +1536,7 @@ void simple_height_mapping_demo_loop(Scene scene)
     scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
     scene.shader["obj_shader"].setVec3("lightPos", lightPos);
 
-    float heightScale = 0.1f;                                        // 调整深度/高度范围
+    float heightScale = 0.05f;                                        // 调整深度/高度范围
     scene.shader["obj_shader"].setFloat("heightScale", heightScale); // adjust with Q and E keys
 
     glActiveTexture(GL_TEXTURE0);
