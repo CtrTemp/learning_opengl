@@ -1536,7 +1536,7 @@ void simple_height_mapping_demo_loop(Scene scene)
     scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
     scene.shader["obj_shader"].setVec3("lightPos", lightPos);
 
-    float heightScale = 0.05f;                                        // 调整深度/高度范围
+    float heightScale = 0.05f;                                       // 调整深度/高度范围
     scene.shader["obj_shader"].setFloat("heightScale", heightScale); // adjust with Q and E keys
 
     glActiveTexture(GL_TEXTURE0);
@@ -1673,6 +1673,124 @@ void renderQuad_Normal()
 }
 
 #pragma endregion
+
+void deferred_shading_demo_loop(Scene scene)
+{
+
+    /******************************** Obj Position ********************************/
+    std::vector<glm::vec3> objectPositions;
+    objectPositions.push_back(glm::vec3(-3.0, -0.5, -3.0));
+    objectPositions.push_back(glm::vec3(0.0, -0.5, -3.0));
+    objectPositions.push_back(glm::vec3(3.0, -0.5, -3.0));
+    objectPositions.push_back(glm::vec3(-3.0, -0.5, 0.0));
+    objectPositions.push_back(glm::vec3(0.0, -0.5, 0.0));
+    objectPositions.push_back(glm::vec3(3.0, -0.5, 0.0));
+    objectPositions.push_back(glm::vec3(-3.0, -0.5, 3.0));
+    objectPositions.push_back(glm::vec3(0.0, -0.5, 3.0));
+    objectPositions.push_back(glm::vec3(3.0, -0.5, 3.0));
+
+    /******************************* Light Position *******************************/
+
+    const unsigned int NR_LIGHTS = 32; // 总共32个光源
+    std::vector<glm::vec3> lightPositions;
+    std::vector<glm::vec3> lightColors;
+    srand(13);
+    for (unsigned int i = 0; i < NR_LIGHTS; i++)
+    {
+        // calculate slightly random offsets
+        float xPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+        float yPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 4.0);
+        float zPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+        lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
+        // also calculate random color
+        float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+        float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+        float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+        lightColors.push_back(glm::vec3(rColor, gColor, bColor));
+    }
+
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 定义 MVP 变换阵
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+    // model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+
+    // 1. geometry pass: render scene's geometry/color data into gbuffer
+    // -----------------------------------------------------------------
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["g_buffer"]);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    scene.shader["G_buffer_shader"].use();
+    scene.shader["G_buffer_shader"].setMat4("projection", projection);
+    scene.shader["G_buffer_shader"].setMat4("view", view);
+    for (unsigned int i = 0; i < objectPositions.size(); i++)
+    {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, objectPositions[i]);
+        model = glm::scale(model, glm::vec3(0.5f));
+        scene.shader["G_buffer_shader"].setMat4("model", model);
+        scene.model_obj["backpack"].Draw(scene.shader["G_buffer_shader"]);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 2. lighting pass: calculate lighting by iterating over a screen filled quad pixel-by-pixel using the gbuffer's content.
+    // -----------------------------------------------------------------------------------------------------------------------
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    scene.shader["deferred_shader"].use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gPosition_tex"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gNormal_tex"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gAlbedoSpec_tex"]);
+    // send light relevant uniforms
+    for (unsigned int i = 0; i < lightPositions.size(); i++)
+    {
+        scene.shader["deferred_shader"].setVec3("lights[" + std::to_string(i) + "].Position", lightPositions[i]);
+        scene.shader["deferred_shader"].setVec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
+        // update attenuation parameters and calculate radius
+        const float linear = 0.7f;
+        const float quadratic = 1.8f;
+        scene.shader["deferred_shader"].setFloat("lights[" + std::to_string(i) + "].Linear", linear);
+        scene.shader["deferred_shader"].setFloat("lights[" + std::to_string(i) + "].Quadratic", quadratic);
+    }
+    scene.shader["deferred_shader"].setVec3("viewPos", primary_cam.cameraPos);
+    // finally render quad
+    renderQuad();
+
+    // 2.5. copy content of geometry's depth buffer to default framebuffer's depth buffer
+    // ----------------------------------------------------------------------------------
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, scene.FBO["g_buffer"]);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+    // blit to default framebuffer. Note that this may or may not work as the internal formats of both the FBO and default framebuffer have to match.
+    // the internal formats are implementation defined. This works on all of my systems, but if it doesn't on yours you'll likely have to write to the
+    // depth buffer in another shader stage (or somehow see to match the default framebuffer's internal format with the FBO's internal format).
+    glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 3. render lights on top of scene
+    // --------------------------------
+    scene.shader["light_shader"].use();
+    scene.shader["light_shader"].setMat4("projection", projection);
+    scene.shader["light_shader"].setMat4("view", view);
+    for (unsigned int i = 0; i < lightPositions.size(); i++)
+    {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPositions[i]);
+        model = glm::scale(model, glm::vec3(0.125f));
+        scene.shader["light_shader"].setMat4("model", model);
+        scene.shader["light_shader"].setVec3("lightColor", lightColors[i]);
+        renderSphere();
+    }
+}
 
 void PBR_light_base_demo_loop(Scene scene)
 {

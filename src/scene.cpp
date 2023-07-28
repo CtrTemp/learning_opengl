@@ -1684,7 +1684,6 @@ Scene switch_gen_shadow_mapping_scene_phase2()
         "../shaders/shader_file/shadow_base/phase02/depth.vert",
         "../shaders/shader_file/shadow_base/phase02/depth.frag");
 
-
     scene.shader.emplace("obj_shader", obj_shader);
     scene.shader.emplace("depth_shader", depth_shader);
 
@@ -1707,7 +1706,6 @@ Scene switch_gen_shadow_mapping_scene_phase2()
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
     glBindVertexArray(0); // 解绑 VAO
-
 
     /************************ Load Texture ************************/
     unsigned int woodTexture = load_textures("../textures/floor.jpg", true);
@@ -1953,7 +1951,116 @@ Scene gen_simple_height_mapping_scene()
     return scene;
 }
 
+Scene gen_deferred_shading_scene()
+{
 
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {0.0f, 0.0f, 3.0f};
+    primary_cam.cameraPos = cameraPos;
+
+    Shader G_buffer_shader = Shader(
+        "../shaders/shader_file/defer_base/G_buffer.vert",
+        "../shaders/shader_file/defer_base/G_buffer.frag");
+
+    Shader deferred_shader = Shader(
+        "../shaders/shader_file/defer_base/deferred_shading.vert",
+        "../shaders/shader_file/defer_base/deferred_shading.frag");
+
+    Shader light_shader = Shader(
+        "../shaders/shader_file/defer_base/light_box.vert",
+        "../shaders/shader_file/defer_base/light_box.frag");
+
+    scene.shader.emplace("G_buffer_shader", G_buffer_shader);
+    scene.shader.emplace("deferred_shader", deferred_shader);
+    scene.shader.emplace("light_shader", light_shader);
+
+    scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
+
+    /************************ Modify G-Buffer Texture ************************/
+    scene.FBO.emplace("g_buffer", 0);
+    glGenBuffers(1, &scene.FBO["g_buffer"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["g_buffer"]);
+
+    unsigned int gPosition, gNormal, gAlbedoSpec;
+    // position color buffer
+    glGenTextures(1, &gPosition);
+    glBindTexture(GL_TEXTURE_2D, gPosition);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+    // normal color buffer
+    glGenTextures(1, &gNormal);
+    glBindTexture(GL_TEXTURE_2D, gNormal);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+    // color + specular color buffer
+    glGenTextures(1, &gAlbedoSpec);
+    glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
+
+    scene.textures.emplace("gPosition_tex", gPosition);
+    scene.textures.emplace("gNormal_tex", gNormal);
+    scene.textures.emplace("gAlbedoSpec_tex", gAlbedoSpec);
+    // 将以上的组件统统以颜色附件的形式绑定到 G-Buffer
+    unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, attachments);
+
+    // RBO 创建
+    // create and attach depth buffer (renderbuffer)
+    scene.RBO.emplace("rbo_depth", 0);
+    glGenRenderbuffers(1, &scene.RBO["rbo_depth"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["rbo_depth"]);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, primary_cam.frame_width, primary_cam.frame_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["rbo_depth"]);
+    // finally check if framebuffer is complete
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "Framebuffer not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    /***************************** 光源信息配置 *****************************/
+
+    // const unsigned int NR_LIGHTS = 32; // 总共32个光源
+    // std::vector<glm::vec3> lightPositions;
+    // std::vector<glm::vec3> lightColors;
+    // srand(13);
+    // for (unsigned int i = 0; i < NR_LIGHTS; i++)
+    // {
+    //     // calculate slightly random offsets
+    //     float xPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+    //     float yPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 4.0);
+    //     float zPos = static_cast<float>(((rand() % 100) / 100.0) * 6.0 - 3.0);
+    //     lightPositions.push_back(glm::vec3(xPos, yPos, zPos));
+    //     // also calculate random color
+    //     float rColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+    //     float gColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+    //     float bColor = static_cast<float>(((rand() % 100) / 200.0f) + 0.5); // between 0.5 and 1.0
+    //     lightColors.push_back(glm::vec3(rColor, gColor, bColor));
+    // }
+
+    scene.shader["deferred_shader"].use();
+    scene.shader["deferred_shader"].setInt("gPosition", 0);
+    scene.shader["deferred_shader"].setInt("gNormal", 1);
+    scene.shader["deferred_shader"].setInt("gAlbedoSpec", 2);
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
 
 Scene gen_PBR_light_base_scene()
 {

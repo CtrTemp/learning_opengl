@@ -28,6 +28,7 @@ public:
     std::unordered_map<std::string, unsigned int> FBO; // Frame Buffer Object
     std::unordered_map<std::string, unsigned int> RBO; // Render Buffer Object
     unsigned int EBO;
+    // std::unordered_map<std::string, unsigned int> GBO;
     glm::mat4 trans;
     glm::mat4 model;
     glm::mat4 view;
@@ -81,6 +82,8 @@ Scene gen_point_light_shadow_mapping_scene();
 Scene gen_simple_normal_mapping_scene();
 
 Scene gen_simple_height_mapping_scene();
+
+Scene gen_deferred_shading_scene();
 
 Scene gen_PBR_light_base_scene();
 

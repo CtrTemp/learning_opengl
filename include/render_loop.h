@@ -54,6 +54,8 @@ void simple_normal_mapping_demo_loop(Scene scene);
 void simple_height_mapping_demo_loop(Scene scene);
 void renderQuad_Normal();
 
+void deferred_shading_demo_loop(Scene scene);
+
 void PBR_light_base_demo_loop(Scene scene);
 void PBR_light_textured_demo_loop(Scene scene);
 void renderSphere();
