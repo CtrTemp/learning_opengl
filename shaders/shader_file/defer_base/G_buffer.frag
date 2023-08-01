@@ -1,4 +1,7 @@
 #version 330 core
+
+// 注意看，这里的 fragment shader 有多个 output
+// 应该就对应了三个 color attachment
 layout (location = 0) out vec3 gPosition;
 layout (location = 1) out vec3 gNormal;
 layout (location = 2) out vec4 gAlbedoSpec;

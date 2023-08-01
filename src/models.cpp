@@ -32,6 +32,7 @@ void Model::processNode(aiNode *node, const aiScene *scene)
 
 Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 {
+    // cout << "processMesh" << endl;
     vector<Vertex> vertices;
     vector<GLuint> indices;
     vector<Texture> textures;
@@ -106,6 +107,24 @@ Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene)
 vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type, string typeName)
 {
     vector<Texture> textures;
+    // switch (type)
+    // {
+    // case aiTextureType_DIFFUSE:
+    //     cout << "loading diffuse texture" << endl;
+    //     break;
+    // case aiTextureType_SPECULAR:
+    //     cout << "loading specular texture" << endl;
+    //     break;
+    // case aiTextureType_HEIGHT:
+    //     cout << "loading height texture" << endl;
+    //     break;
+    // case aiTextureType_AMBIENT:
+    //     cout << "loading ambient texture" << endl;
+    //     break;
+
+    // default:
+    //     break;
+    // }
     for (unsigned int i = 0; i < mat->GetTextureCount(type); i++)
     {
         aiString str;
@@ -123,6 +142,8 @@ vector<Texture> Model::loadMaterialTextures(aiMaterial *mat, aiTextureType type,
         }
         if (!skip)
         { // if texture hasn't been loaded already, load it
+            cout << "root dir = " << directory << endl;
+            cout << "texture path = " << directory + "/" + str.data << endl;
             Texture texture;
             texture.id = TextureFromFile(str.C_Str(), this->directory, false);
             texture.type = typeName;

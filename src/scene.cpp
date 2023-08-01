@@ -303,8 +303,8 @@ Scene gen_load_model_scene()
     primary_cam.cameraPos = cameraPos;
 
     // model 场景生成
-    // scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
-    scene.model_obj.emplace("backpack", Model("../models/gun/Cerberus_LP.FBX"));
+    scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
+    // scene.model_obj.emplace("backpack", Model("../models/gun/Cerberus_LP.FBX"));
     // shader 创建
 
     Shader obj_shader = Shader("../shaders/shader_file/model_base/model.vert", "../shaders/shader_file/model_base/model.frag");
@@ -1958,10 +1958,12 @@ Scene gen_deferred_shading_scene()
 
     // 更改背景色
     scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-
     // 相机初始化坐标更改
-    glm::vec3 cameraPos = {0.0f, 0.0f, 3.0f};
+    glm::vec3 cameraPos = {3.002f, 3.271f, 6.986f};
     primary_cam.cameraPos = cameraPos;
+    // 相机初始化朝向更改
+    glm::vec3 cameraFront = {-0.348f, -0.545f, -0.763f};
+    primary_cam.cameraFront = cameraFront;
 
     Shader G_buffer_shader = Shader(
         "../shaders/shader_file/defer_base/G_buffer.vert",
@@ -1981,9 +1983,11 @@ Scene gen_deferred_shading_scene()
 
     scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
 
+    // 还是要尝试手动导入 texture
+
     /************************ Modify G-Buffer Texture ************************/
     scene.FBO.emplace("g_buffer", 0);
-    glGenBuffers(1, &scene.FBO["g_buffer"]);
+    glGenFramebuffers(1, &scene.FBO["g_buffer"]);
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["g_buffer"]);
 
     unsigned int gPosition, gNormal, gAlbedoSpec;

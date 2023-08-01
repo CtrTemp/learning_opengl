@@ -271,8 +271,8 @@ void scene_load_model_demo_loop(Scene scene)
     // render the loaded model
     glm::mat4 model = glm::mat4(1.0f);
     model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-    model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));  // it's a bit too big for our scene, so scale it down
-    model = glm::rotate(model, glm::radians(90.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
+    // model = glm::scale(model, glm::vec3(0.05f));  // it's a bit too big for our scene, so scale it down
+    // model = glm::rotate(model, glm::radians(90.0f), glm::vec3(-1.0f, 0.0f, 0.0f));
 
     scene.shader["obj_shader"].setMat4("model", model);
     scene.shader["obj_shader"].setMat4("view", view);
@@ -1726,6 +1726,8 @@ void deferred_shading_demo_loop(Scene scene)
     // 1. geometry pass: render scene's geometry/color data into gbuffer
     // -----------------------------------------------------------------
     glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["g_buffer"]);
+
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     scene.shader["G_buffer_shader"].use();
@@ -1737,7 +1739,8 @@ void deferred_shading_demo_loop(Scene scene)
         model = glm::translate(model, objectPositions[i]);
         model = glm::scale(model, glm::vec3(0.5f));
         scene.shader["G_buffer_shader"].setMat4("model", model);
-        scene.model_obj["backpack"].Draw(scene.shader["G_buffer_shader"]);
+        // scene.shader["deferred_shader"].setMat4("model", model);
+        scene.model_obj["backpack"].Draw(scene.shader["deferred_shader"]);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -1752,15 +1755,23 @@ void deferred_shading_demo_loop(Scene scene)
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, scene.textures["gAlbedoSpec_tex"]);
     // send light relevant uniforms
+    float constant = 1.0f;
+    float linear = 0.7f;
+    float quadratic = 1.8f;
     for (unsigned int i = 0; i < lightPositions.size(); i++)
     {
         scene.shader["deferred_shader"].setVec3("lights[" + std::to_string(i) + "].Position", lightPositions[i]);
         scene.shader["deferred_shader"].setVec3("lights[" + std::to_string(i) + "].Color", lightColors[i]);
         // update attenuation parameters and calculate radius
-        const float linear = 0.7f;
-        const float quadratic = 1.8f;
         scene.shader["deferred_shader"].setFloat("lights[" + std::to_string(i) + "].Linear", linear);
         scene.shader["deferred_shader"].setFloat("lights[" + std::to_string(i) + "].Quadratic", quadratic);
+
+        // 对于每一个光源需要计算其光照可影响的范围半径
+        glm::vec3 lightColor = lightColors[i];
+        float lightMax = std::fmaxf(std::fmaxf(lightColor.r, lightColor.g), lightColor.b);
+        float radius = (-linear + std::sqrt(linear * linear - 4 * quadratic * (constant - (256.0 / 5.0) * lightMax))) / (2 * quadratic);
+
+        scene.shader["deferred_shader"].setFloat("lights[" + std::to_string(i) + "].Radius", radius);
     }
     scene.shader["deferred_shader"].setVec3("viewPos", primary_cam.cameraPos);
     // finally render quad
@@ -1776,9 +1787,9 @@ void deferred_shading_demo_loop(Scene scene)
     /**
      *  这里是重点！！可能作者的代码也不完全正确，这取决于你的系统对 depth buffer 的编码类型？默认数据传输和储存方式不匹配？？？
      *  重看这里。。
-     * */ 
-    
-    
+     *  ... 像个小丑，后面发现其实是最开始创建 FBO 的时候，将 glGenFramebuffers 错写成了 glGenBuffers...
+     * */
+
     glBlitFramebuffer(0, 0, primary_cam.frame_width, primary_cam.frame_height, 0, 0, primary_cam.frame_width, primary_cam.frame_height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

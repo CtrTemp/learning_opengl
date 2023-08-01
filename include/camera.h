@@ -37,6 +37,10 @@ public:
     }
 
 public:
+    // 应该有一个函数是通过当前的 viewPos 和 cameraFront 来更新摄像机当前欧拉角
+    void update_cam_pos();
+
+public:
     float fov;
     unsigned int frame_width;
     unsigned int frame_height;

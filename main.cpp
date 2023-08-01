@@ -119,7 +119,7 @@ int main()
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            // render_control();
+            render_control();
         }
 
         // Rendering
