@@ -1809,6 +1809,124 @@ void deferred_shading_demo_loop(Scene scene)
     }
 }
 
+void simple_SSAO_demo_loop(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    // glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // 定义 MVP 变换阵
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+    // model = glm::rotate(model, glm::radians((float)glfwGetTime() * -10.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+    // 1. geometry pass: render scene's geometry/color data into gbuffer
+    // -----------------------------------------------------------------
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["g_buffer"]);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    scene.shader["geom_pass_shader"].use();
+    scene.shader["geom_pass_shader"].setMat4("projection", projection);
+    scene.shader["geom_pass_shader"].setMat4("view", view);
+    // room cube
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0, 7.0f, 0.0f));
+    model = glm::scale(model, glm::vec3(7.5f, 7.5f, 7.5f));
+    scene.shader["geom_pass_shader"].setMat4("model", model);
+    scene.shader["geom_pass_shader"].setInt("invertedNormals", 1); // invert normals as we're inside the cube
+    renderCube();
+    scene.shader["geom_pass_shader"].setInt("invertedNormals", 0);
+    // backpack model on the floor
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(0.0f, 0.5f, 0.0));
+    model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0, 0.0, 0.0));
+    model = glm::scale(model, glm::vec3(1.0f));
+    scene.shader["geom_pass_shader"].setMat4("model", model);
+    scene.model_obj["backpack"].Draw(scene.shader["geom_pass_shader"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 2. generate SSAO texture
+    // ------------------------
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["ssao_fbo"]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    scene.shader["ssao_shader"].use();
+
+    // generate sample kernel
+    // ----------------------
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoKernel;
+    for (unsigned int i = 0; i < 64; ++i)
+    {
+        glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+
+        // scale samples s.t. they're more aligned to center of kernel
+        // scale = ourLerp(0.1f, 1.0f, scale * scale);
+        scale = 0.1f + scale * scale * (1.0f - 0.9f);
+        sample *= scale;
+        ssaoKernel.push_back(sample);
+    }
+    // Send kernel + rotation
+    for (unsigned int i = 0; i < 64; ++i)
+        scene.shader["ssao_shader"].setVec3("samples[" + std::to_string(i) + "]", ssaoKernel[i]);
+    scene.shader["ssao_shader"].setMat4("projection", projection);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gPosition"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gNormal"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["noise_tex"]);
+    renderQuad();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 3. blur SSAO texture to remove noise
+    // ------------------------------------
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["blur_fbo"]);
+    glClear(GL_COLOR_BUFFER_BIT);
+    scene.shader["blur_shader"].use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["ssao_tex"]);
+    renderQuad();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // 4. lighting pass: traditional deferred Blinn-Phong lighting with added screen-space ambient occlusion
+    // -----------------------------------------------------------------------------------------------------
+
+    // lighting info
+    // -------------
+    glm::vec3 lightPos = glm::vec3(2.0, 4.0, -2.0);
+    glm::vec3 lightColor = glm::vec3(0.9, 0.9, 0.7);
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    scene.shader["light_pass_shader"].use();
+    // send light relevant uniforms
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    glm::vec3 lightPosView = glm::vec3(view * glm::vec4(lightPos, 1.0));
+    scene.shader["light_pass_shader"].setVec3("light.Position", lightPosView); // 这里的 light pos 不对
+    scene.shader["light_pass_shader"].setVec3("light.Color", lightColor);
+    // Update attenuation parameters
+    const float linear = 0.09f;
+    const float quadratic = 0.032f;
+    scene.shader["light_pass_shader"].setFloat("light.Linear", linear);
+    scene.shader["light_pass_shader"].setFloat("light.Quadratic", quadratic);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gPosition"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gNormal"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["gAlbedo"]);
+    glActiveTexture(GL_TEXTURE3); // add extra SSAO texture to lighting pass
+    glBindTexture(GL_TEXTURE_2D, scene.textures["blur_tex"]);
+    renderQuad();
+}
+
 void PBR_light_base_demo_loop(Scene scene)
 {
     // set clear frame color

@@ -2066,6 +2066,229 @@ Scene gen_deferred_shading_scene()
     return scene;
 }
 
+float ourLerp(float a, float b, float f)
+{
+    return a + f * (b - a);
+}
+Scene gen_simple_SSAO_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {3.002f, 3.271f, 6.986f};
+    primary_cam.cameraPos = cameraPos;
+    // // 相机初始化朝向更改
+    // glm::vec3 cameraFront = {-0.348f, -0.545f, -0.763f};
+    // primary_cam.cameraFront = cameraFront;
+
+    Shader geom_pass_shader = Shader(
+        "../shaders/shader_file/SSAO/geom_pass.vert",
+        "../shaders/shader_file/SSAO/geom_pass.frag");
+
+    Shader light_pass_shader = Shader(
+        "../shaders/shader_file/SSAO/light_pass.vert",
+        "../shaders/shader_file/SSAO/light_pass.frag");
+
+    Shader ssao_shader = Shader(
+        "../shaders/shader_file/SSAO/ssao.vert",
+        "../shaders/shader_file/SSAO/ssao.frag");
+
+    Shader blur_shader = Shader(
+        "../shaders/shader_file/SSAO/blur.vert",
+        "../shaders/shader_file/SSAO/blur.frag");
+
+    scene.shader.emplace("geom_pass_shader", geom_pass_shader);
+    scene.shader.emplace("light_pass_shader", light_pass_shader);
+    scene.shader.emplace("ssao_shader", ssao_shader);
+    scene.shader.emplace("blur_shader", blur_shader);
+
+    scene.model_obj.emplace("backpack", Model("../models/backpack/backpack.obj"));
+
+    // 还是要尝试手动导入 texture
+
+    /************************ Modify G-Buffer Texture ************************/
+    scene.FBO.emplace("g_buffer", 0);
+    glGenFramebuffers(1, &scene.FBO["g_buffer"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["g_buffer"]);
+
+    unsigned int gPosition, gNormal, gAlbedo;
+    // position color buffer
+    glGenTextures(1, &gPosition);
+    glBindTexture(GL_TEXTURE_2D, gPosition);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+    // normal color buffer
+    glGenTextures(1, &gNormal);
+    glBindTexture(GL_TEXTURE_2D, gNormal);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+    // color + specular color buffer
+    glGenTextures(1, &gAlbedo);
+    glBindTexture(GL_TEXTURE_2D, gAlbedo);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedo, 0);
+
+    scene.textures.emplace("gPosition", gPosition);
+    scene.textures.emplace("gNormal", gNormal);
+    scene.textures.emplace("gAlbedo", gAlbedo);
+
+    // tell OpenGL which color attachments we'll use (of this framebuffer) for rendering
+    unsigned int attachments[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, attachments);
+
+    // RBO 创建
+    // create and attach depth buffer (renderbuffer)
+    scene.RBO.emplace("rbo_depth", 0);
+    glGenRenderbuffers(1, &scene.RBO["rbo_depth"]);
+    glBindRenderbuffer(GL_RENDERBUFFER, scene.RBO["rbo_depth"]);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, primary_cam.frame_width, primary_cam.frame_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, scene.RBO["rbo_depth"]);
+    // finally check if framebuffer is complete
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "Framebuffer not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // // also create framebuffer to hold SSAO processing stage
+    // // -----------------------------------------------------
+    // // unsigned int ssaoFBO, ssaoBlurFBO;
+    // scene.FBO.emplace("ssao_fbo", 0);
+    // glGenFramebuffers(1, &scene.FBO["ssao_fbo"]);
+    // glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["ssao_fbo"]);
+    // // unsigned int ssaoColorBuffer, ssaoColorBufferBlur;
+    // scene.textures.emplace("ssao_texture", 0);
+    // // SSAO color buffer
+    // glGenTextures(1, &scene.textures["ssao_texture"]);
+    // glBindTexture(GL_TEXTURE_2D, scene.textures["ssao_texture"]);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RED, GL_FLOAT, NULL);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene.textures["ssao_texture"], 0);
+    // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    //     std::cout << "SSAO Framebuffer not complete!" << std::endl;
+
+    // // and blur stage
+    // scene.FBO.emplace("blur_fbo", 0);
+    // glGenFramebuffers(1, &scene.FBO["blur_fbo"]);
+    // scene.textures.emplace("blur_texture", 0);
+
+    // glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["blur_fbo"]);
+    // glGenTextures(1, &scene.textures["blur_texture"]);
+    // glBindTexture(GL_TEXTURE_2D, scene.textures["blur_texture"]);
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RED, GL_FLOAT, NULL);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene.textures["blur_texture"], 0);
+    // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    //     std::cout << "SSAO Blur Framebuffer not complete!" << std::endl;
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // also create framebuffer to hold SSAO processing stage
+    // -----------------------------------------------------
+    // unsigned int ssaoFBO, ssaoBlurFBO;
+    scene.FBO.emplace("ssao_fbo", 0);
+    scene.FBO.emplace("blur_fbo", 0);
+    glGenFramebuffers(1, &scene.FBO["ssao_fbo"]);
+    glGenFramebuffers(1, &scene.FBO["blur_fbo"]);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["ssao_fbo"]);
+    // unsigned int ssaoColorBuffer, ssaoColorBufferBlur;
+    scene.textures.emplace("ssao_tex", 0);
+    scene.textures.emplace("blur_tex", 0);
+    // SSAO color buffer
+    glGenTextures(1, &scene.textures["ssao_tex"]);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["ssao_tex"]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RED, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene.textures["ssao_tex"], 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "SSAO Framebuffer not complete!" << std::endl;
+    // and blur stage
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["blur_fbo"]);
+    glGenTextures(1, &scene.textures["blur_tex"]);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["blur_tex"]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, primary_cam.frame_width, primary_cam.frame_height, 0, GL_RED, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scene.textures["blur_tex"], 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "SSAO Blur Framebuffer not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // generate sample kernel
+    // ----------------------
+    std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // generates random floats between 0.0 and 1.0
+    std::default_random_engine generator;
+    std::vector<glm::vec3> ssaoKernel;
+    for (unsigned int i = 0; i < 64; ++i)
+    {
+        glm::vec3 sample(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, randomFloats(generator));
+        sample = glm::normalize(sample);
+        sample *= randomFloats(generator);
+        float scale = float(i) / 64.0f;
+
+        // scale samples s.t. they're more aligned to center of kernel
+        scale = ourLerp(0.1f, 1.0f, scale * scale);
+        sample *= scale;
+        ssaoKernel.push_back(sample);
+    }
+
+    /******************************* 这里有疑问？noise如何存储？ *******************************/
+    // generate noise texture
+    // ----------------------
+    std::vector<glm::vec3> ssaoNoise;
+    for (unsigned int i = 0; i < 16; i++)
+    {
+        glm::vec3 noise(randomFloats(generator) * 2.0 - 1.0, randomFloats(generator) * 2.0 - 1.0, 0.0f); // rotate around z-axis (in tangent space)
+        ssaoNoise.push_back(noise);
+    }
+    // unsigned int noiseTexture;
+    scene.textures.emplace("noise_tex", 0);
+    glGenTextures(1, &scene.textures["noise_tex"]);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["noise_tex"]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // // lighting info
+    // // 应该考虑后面放在 render loop 中进行存储
+    // // -------------
+    // glm::vec3 lightPos = glm::vec3(2.0, 4.0, -2.0);
+    // glm::vec3 lightColor = glm::vec3(0.2, 0.2, 0.7);
+
+    // shader configuration
+    // --------------------
+    scene.shader["light_pass_shader"].use();
+    scene.shader["light_pass_shader"].setInt("gPosition", 0);
+    scene.shader["light_pass_shader"].setInt("gNormal", 1);
+    scene.shader["light_pass_shader"].setInt("gAlbedo", 2);
+    scene.shader["light_pass_shader"].setInt("ssao", 3);
+    scene.shader["ssao_shader"].use();
+    scene.shader["ssao_shader"].setInt("gPosition", 0);
+    scene.shader["ssao_shader"].setInt("gNormal", 1);
+    scene.shader["ssao_shader"].setInt("texNoise", 2);
+    scene.shader["blur_shader"].use();
+    scene.shader["blur_shader"].setInt("ssaoInput", 0);
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
 Scene gen_PBR_light_base_scene()
 {
     Scene scene;

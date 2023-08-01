@@ -85,6 +85,8 @@ Scene gen_simple_height_mapping_scene();
 
 Scene gen_deferred_shading_scene();
 
+Scene gen_simple_SSAO_scene();
+
 Scene gen_PBR_light_base_scene();
 
 Scene gen_PBR_light_textured_scene();

@@ -68,7 +68,9 @@ int main()
     // Scene normal_mapping_scene = gen_simple_normal_mapping_scene();
     // Scene height_mapping_scene = gen_simple_height_mapping_scene();
 
-    Scene deferred_shading_scene = gen_deferred_shading_scene();
+    // Scene deferred_shading_scene = gen_deferred_shading_scene();
+
+    Scene SSAO_scene = gen_simple_SSAO_scene();
 
 
     // Scene pbr_light_scene = gen_PBR_light_base_scene();
@@ -153,7 +155,9 @@ int main()
         // simple_normal_mapping_demo_loop(normal_mapping_scene);
         // simple_height_mapping_demo_loop(height_mapping_scene);
 
-        deferred_shading_demo_loop(deferred_shading_scene);
+        // deferred_shading_demo_loop(deferred_shading_scene);
+
+        simple_SSAO_demo_loop(SSAO_scene);
         
         // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
         // PBR_light_base_demo_loop(pbr_light_scene);

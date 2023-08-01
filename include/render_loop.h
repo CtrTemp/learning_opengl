@@ -56,6 +56,8 @@ void renderQuad_Normal();
 
 void deferred_shading_demo_loop(Scene scene);
 
+void simple_SSAO_demo_loop(Scene scene);
+
 void PBR_light_base_demo_loop(Scene scene);
 void PBR_light_textured_demo_loop(Scene scene);
 void renderSphere();
