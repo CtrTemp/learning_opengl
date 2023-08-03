@@ -15,97 +15,29 @@ public:
     Scene()
     {
         background = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-        // trans = glm::mat4(1.0f);
-        // model = glm::mat4(1.0f);
-        // view = glm::mat4(1.0f);
-        // projection = glm::mat4(1.0f);
+        mat_shininess = 128.0f;
+        mat_ambient = 2.5f;
     }
 
 public:
     glm::vec4 background;
-    std::unordered_map<std::string, unsigned int> VAO;
-    std::unordered_map<std::string, unsigned int> VBO;
-    std::unordered_map<std::string, unsigned int> FBO; // Frame Buffer Object
-    std::unordered_map<std::string, unsigned int> RBO; // Render Buffer Object
-    unsigned int EBO;
-    // // std::unordered_map<std::string, unsigned int> GBO;
-    // glm::mat4 trans;
-    // glm::mat4 model;
-    // glm::mat4 view;
-    // glm::mat4 projection;
+
     std::unordered_map<std::string, Shader> shader; // 目前场景和shader是绑定的
     std::unordered_map<std::string, unsigned int> textures;
-    // std::vector<>
     std::unordered_map<std::string, Model> model_obj;
+
+    float mat_shininess;
+    float mat_ambient;
 };
 
+Scene gen_playground_scene_p1_simple();
 
-Scene gen_playground_scene();
+Scene gen_playground_scene_p2_texture();
 
-Scene gen_multi_rotating_cube_scene();
+Scene gen_playground_scene_p3_light_source();
 
-Scene gen_lighting_scene();
+Scene gen_playground_scene_p4_normal_mapping();
 
-Scene gen_load_model_scene();
-
-Scene gen_framebuffer_scene();
-
-Scene gen_skybox_scene();
-
-Scene gen_geometry_shader_scene();
-
-Scene gen_explode_model_scene();
-
-Scene gen_visualize_model_normal_scene();
-
-Scene gen_render_instance_scene();
-
-Scene gen_render_instance_scene_opt();
-
-Scene gen_mars_simu_scene();
-
-Scene gen_default_MSAA_scene();
-
-Scene gen_offscreen_MSAA_scene();
-
-Scene gen_offscreen_MSAA_scene_ano();
-
-Scene gen_test_Blinn_Phong_scene();
-
-Scene gen_shadow_mapping_scene();
-
-Scene gen_shadow_mapping_scene();
-
-Scene switch_gen_shadow_mapping_scene();
-
-Scene switch_gen_shadow_mapping_scene_phase2();
-
-Scene gen_point_light_shadow_mapping_scene();
-
-Scene gen_simple_normal_mapping_scene();
-
-Scene gen_simple_height_mapping_scene();
-
-Scene gen_deferred_shading_scene();
-
-Scene gen_simple_SSAO_scene();
-
-Scene gen_PBR_light_base_scene();
-
-Scene gen_PBR_light_textured_scene();
-
-Scene gen_PBR_IBL_diffuse_scene();
-Scene gen_PBR_IBL_diffuse_scene_p2();
-Scene gen_PBR_IBL_diffuse_scene_ano();
-
-
-Scene gen_PBR_IBL_specular_scene();
-
-Scene gen_PBR_IBL_textured_scene();
-
-Scene gen_PBR_IBL_model_scene();
-
-void renderCube_IBL();
-void renderQuad_IBL();
+Scene gen_playground_scene_p5_height_mapping();
 
 #endif

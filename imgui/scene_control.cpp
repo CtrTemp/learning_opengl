@@ -5,7 +5,7 @@
 
 #define CAM_POS_RANGE 50
 
-void render_control(Scene& scene)
+void render_control(Scene &scene)
 {
     static float background_color[3] = {scene.background.r, scene.background.g, scene.background.b};
 
@@ -31,6 +31,9 @@ void render_control(Scene& scene)
     scene.background.r = background_color[0];
     scene.background.g = background_color[1];
     scene.background.b = background_color[2];
+
+    ImGui::SliderFloat("Ambient", &scene.mat_ambient, 0, 10);     // Edit 1 float using a slider from 0.0f to 1.0f
+    ImGui::SliderFloat("Shininess", &scene.mat_shininess, 8, 256); // Edit 1 float using a slider from 0.0f to 1.0f
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();

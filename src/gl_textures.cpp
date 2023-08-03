@@ -55,6 +55,7 @@ unsigned int load_textures(std::string texture_src, bool vertical_flip)
     else
     {
         std::cout << "Own loader : Texture failed to load at path: " << texture_src << std::endl;
+        throw std::runtime_error("Own loader : Texture failed to load at path: ");
         stbi_image_free(data);
     }
 
@@ -93,6 +94,7 @@ unsigned int load_HDR_textures(std::string texture_src, bool vertical_flip)
     else
     {
         std::cout << "HDR loader : Texture failed to load at path: " << texture_src << std::endl;
+        throw std::runtime_error("HDR loader : Texture failed to load at path: ");
         stbi_image_free(data);
     }
 
@@ -177,6 +179,7 @@ unsigned int TextureFromFile(const char *path, const string &directory, bool gam
     else
     {
         std::cout << "Temp loader : Texture failed to load at path: " << path << std::endl;
+        throw std::runtime_error("Temp loader : Texture failed to load at path: ");
         stbi_image_free(data);
     }
 
