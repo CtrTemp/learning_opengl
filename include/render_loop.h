@@ -5,6 +5,9 @@
 #include "scene.h"
 #include "camera.h"
 
+
+void playground_demo_loop(Scene scene);
+
 void multi_rotating_cube_demo_loop(Scene scene);
 
 void scene_light_demo_loop(Scene scene);

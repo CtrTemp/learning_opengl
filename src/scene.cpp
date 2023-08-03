@@ -1,5 +1,31 @@
 #include "scene.h"
 
+Scene gen_playground_scene()
+{
+    Scene scene;
+
+    // 更改背景色
+    scene.background = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    // 相机初始化坐标更改
+    glm::vec3 cameraPos = {5.0f, 2.0f, 5.0f};
+    primary_cam.cameraPos = cameraPos;
+
+    Shader obj_shader = Shader(
+        "../shaders/playground/phase01/obj.vert",
+        "../shaders/playground/phase01/obj.frag");
+
+    scene.shader.emplace("obj_shader", obj_shader);
+
+    // depth test
+    glEnable(GL_DEPTH_TEST); // enable depth test
+    // Other render option
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 使用线框模式进行绘制
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // default ： 使用默认模式绘制几何
+
+    return scene;
+}
+
 // 单个Cube所需的顶点信息
 GLfloat vertices[] = {
     // Positions          // Normals           // Texture Coords

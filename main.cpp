@@ -22,7 +22,7 @@ int main()
     // glfwWindowHint(GLFW_SAMPLES, 4);
 
     // create window instance
-    GLFWwindow *window = glfwCreateWindow(primary_cam.frame_width, primary_cam.frame_height, "LearnOpenGL", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(primary_cam.frame_width, primary_cam.frame_height, "OpenGL Playground", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -44,6 +44,8 @@ int main()
     glfwSetCursorPosCallback(window, primary_mouse_moving_call_back);  // 注册鼠标移动交互回调函数
     glfwSetScrollCallback(window, primary_mouse_scroll_callback);      // 注册鼠标滚轮交互回调
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
+
+    Scene playground = gen_playground_scene();
 
     // // demo 场景生成
     // Scene cube_scene = gen_multi_rotating_cube_scene();
@@ -70,7 +72,7 @@ int main()
 
     // Scene deferred_shading_scene = gen_deferred_shading_scene();
 
-    Scene SSAO_scene = gen_simple_SSAO_scene();
+    // Scene SSAO_scene = gen_simple_SSAO_scene();
 
 
     // Scene pbr_light_scene = gen_PBR_light_base_scene();
@@ -121,7 +123,7 @@ int main()
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            render_control();
+            render_control(playground);
         }
 
         // Rendering
@@ -131,6 +133,8 @@ int main()
         glViewport(0, 0, display_w, display_h);
         // glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         // glClear(GL_COLOR_BUFFER_BIT);
+
+        playground_demo_loop(playground);
 
         // demo 场景绘制
         // multi_rotating_cube_demo_loop(cube_scene);
@@ -157,7 +161,7 @@ int main()
 
         // deferred_shading_demo_loop(deferred_shading_scene);
 
-        simple_SSAO_demo_loop(SSAO_scene);
+        // simple_SSAO_demo_loop(SSAO_scene);
         
         // point_light_source_shadow_mapping_demo_loop(point_light_shadow_scene);
         // PBR_light_base_demo_loop(pbr_light_scene);

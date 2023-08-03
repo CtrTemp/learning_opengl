@@ -15,10 +15,10 @@ public:
     Scene()
     {
         background = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-        trans = glm::mat4(1.0f);
-        model = glm::mat4(1.0f);
-        view = glm::mat4(1.0f);
-        projection = glm::mat4(1.0f);
+        // trans = glm::mat4(1.0f);
+        // model = glm::mat4(1.0f);
+        // view = glm::mat4(1.0f);
+        // projection = glm::mat4(1.0f);
     }
 
 public:
@@ -28,16 +28,19 @@ public:
     std::unordered_map<std::string, unsigned int> FBO; // Frame Buffer Object
     std::unordered_map<std::string, unsigned int> RBO; // Render Buffer Object
     unsigned int EBO;
-    // std::unordered_map<std::string, unsigned int> GBO;
-    glm::mat4 trans;
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 projection;
+    // // std::unordered_map<std::string, unsigned int> GBO;
+    // glm::mat4 trans;
+    // glm::mat4 model;
+    // glm::mat4 view;
+    // glm::mat4 projection;
     std::unordered_map<std::string, Shader> shader; // 目前场景和shader是绑定的
     std::unordered_map<std::string, unsigned int> textures;
     // std::vector<>
     std::unordered_map<std::string, Model> model_obj;
 };
+
+
+Scene gen_playground_scene();
 
 Scene gen_multi_rotating_cube_scene();
 

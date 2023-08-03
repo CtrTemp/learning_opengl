@@ -1,5 +1,206 @@
 #include "render_loop.h"
 
+// renderCube() renders a 1x1 3D cube in NDC.
+// -------------------------------------------------
+unsigned int cubeVAO___ = 0;
+unsigned int cubeVBO___ = 0;
+void renderCube___()
+{
+    // initialize (if necessary)
+    if (cubeVAO___ == 0)
+    {
+        float vertices[] = {
+            // back face
+            -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,   // top-right
+            1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 0.0f,  // bottom-right
+            1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 1.0f, 1.0f,   // top-right
+            -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f, // bottom-left
+            -1.0f, 1.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 1.0f,  // top-left
+            // front face
+            -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
+            1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f,  // bottom-right
+            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,   // top-right
+            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,   // top-right
+            -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,  // top-left
+            -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom-left
+            // left face
+            -1.0f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,   // top-right
+            -1.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,  // top-left
+            -1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, // bottom-left
+            -1.0f, -1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 0.0f,  // bottom-right
+            -1.0f, 1.0f, 1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,   // top-right
+                                                                // right face
+            1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,     // top-left
+            1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,   // bottom-right
+            1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,    // top-right
+            1.0f, -1.0f, -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,   // bottom-right
+            1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,     // top-left
+            1.0f, -1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,    // bottom-left
+            // bottom face
+            -1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
+            1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f,  // top-left
+            1.0f, -1.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,   // bottom-left
+            1.0f, -1.0f, 1.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f,   // bottom-left
+            -1.0f, -1.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 0.0f,  // bottom-right
+            -1.0f, -1.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f, 1.0f, // top-right
+            // top face
+            -1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // top-left
+            1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,   // bottom-right
+            1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,  // top-right
+            1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,   // bottom-right
+            -1.0f, 1.0f, -1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, // top-left
+            -1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f   // bottom-left
+        };
+        glGenVertexArrays(1, &cubeVAO___);
+        glGenBuffers(1, &cubeVBO___);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, cubeVBO___);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // link vertex attributes
+        glBindVertexArray(cubeVAO___);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    // render Cube
+    glBindVertexArray(cubeVAO___);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
+
+// renders a 1x1 quad in NDC with manually calculated tangent vectors
+// ------------------------------------------------------------------
+unsigned int quadVAO___ = 0;
+unsigned int quadVBO___;
+void renderQuad___()
+{
+    if (quadVAO___ == 0)
+    {
+        // positions
+        glm::vec3 pos1(-1.0f, 1.0f, 0.0f);
+        glm::vec3 pos2(-1.0f, -1.0f, 0.0f);
+        glm::vec3 pos3(1.0f, -1.0f, 0.0f);
+        glm::vec3 pos4(1.0f, 1.0f, 0.0f);
+        // texture coordinates
+        glm::vec2 uv1(0.0f, 1.0f);
+        glm::vec2 uv2(0.0f, 0.0f);
+        glm::vec2 uv3(1.0f, 0.0f);
+        glm::vec2 uv4(1.0f, 1.0f);
+        // normal vector
+        glm::vec3 nm(0.0f, 0.0f, 1.0f);
+
+        float quadVertices[] = {
+            // positions            // texcoords
+            pos1.x, pos1.y, pos1.z, uv1.x, uv1.y,
+            pos2.x, pos2.y, pos2.z, uv2.x, uv2.y,
+            pos3.x, pos3.y, pos3.z, uv3.x, uv3.y,
+
+            pos1.x, pos1.y, pos1.z, uv1.x, uv1.y,
+            pos3.x, pos3.y, pos3.z, uv3.x, uv3.y,
+            pos4.x, pos4.y, pos4.z, uv4.x, uv4.y};
+        // configure plane VAO
+        glGenVertexArrays(1, &quadVAO___);
+        glGenBuffers(1, &quadVBO___);
+        glBindVertexArray(quadVAO___);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO___);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO___);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+// renders the 3D scene
+// --------------------
+void renderScene___(Shader &shader)
+{
+    // room cube
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(5.0f));
+    shader.setMat4("model", model);
+    glDisable(GL_CULL_FACE);             // note that we disable culling here since we render 'inside' the cube instead of the usual 'outside' which throws off the normal culling methods.
+    shader.setInt("reverse_normals", 1); // A small little hack to invert normals when drawing cube from the inside so lighting still works.
+    renderCube___();
+    shader.setInt("reverse_normals", 0); // and of course disable it
+    glEnable(GL_CULL_FACE);
+    // cubes
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(4.0f, -3.5f, 0.0));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader.setMat4("model", model);
+    renderCube___();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(2.0f, 3.0f, 1.0));
+    model = glm::scale(model, glm::vec3(0.75f));
+    shader.setMat4("model", model);
+    renderCube___();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-3.0f, -1.0f, 0.0));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader.setMat4("model", model);
+    renderCube___();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.5f, 1.0f, 1.5));
+    model = glm::scale(model, glm::vec3(0.5f));
+    shader.setMat4("model", model);
+    renderCube___();
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, glm::vec3(-1.5f, 2.0f, -3.0));
+    model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+    model = glm::scale(model, glm::vec3(0.75f));
+    shader.setMat4("model", model);
+    renderCube___();
+}
+
+void playground_demo_loop(Scene scene)
+{
+
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    vector<glm::vec3> cube_pos{
+        {0.0f, 1.01f, 0.0f}};
+
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    scene.shader["obj_shader"].use();
+    scene.shader["obj_shader"].setMat4("view", view);
+    scene.shader["obj_shader"].setMat4("projection", projection);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, cube_pos[0]);
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setVec3("baseColor", {1.0f, 0.0f, 0.0f});
+    renderCube___();
+
+    model = glm::mat4(1.0f);
+    // model = glm::translate(model, cube_pos[0]);
+    model = glm::scale(model, glm::vec3(5.0f));
+    model = glm::rotate(model, (float)glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setVec3("baseColor", {0.0f, 1.0f, 0.0f});
+    renderQuad___();
+}
+
 void multi_rotating_cube_demo_loop(Scene scene)
 {
     // set clear frame color
