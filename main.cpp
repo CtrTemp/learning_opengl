@@ -45,13 +45,13 @@ int main()
     glfwSetScrollCallback(window, primary_mouse_scroll_callback);      // 注册鼠标滚轮交互回调
     glfwSetMouseButtonCallback(window, primary_mouse_button_callback); // 注册鼠标点击交互回调函数
 
-
     // // demo 场景生成
     // Scene playground = gen_playground_scene_p1_simple();
     // Scene playground = gen_playground_scene_p2_texture();
     // Scene playground = gen_playground_scene_p3_light_source();
     // Scene playground = gen_playground_scene_p4_normal_mapping();
-    Scene playground = gen_playground_scene_p5_height_mapping();
+    // Scene playground = gen_playground_scene_p5_height_mapping();
+    Scene playground = gen_playground_scene_p6_shadow_mapping();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -102,7 +102,8 @@ int main()
         // playground_demo_loop_p2_texture(playground);
         // playground_demo_loop_p3_light_source(playground);
         // playground_demo_loop_p4_normal_mapping(playground);
-        playground_demo_loop_p5_height_mapping(playground);
+        // playground_demo_loop_p5_height_mapping(playground);
+        playground_demo_loop_p6_shadow_mapping(playground);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

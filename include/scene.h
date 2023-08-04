@@ -18,10 +18,14 @@ public:
         mat_shininess = 32.0f;
         mat_ambient = 2.5f;
         mat_heightScale = 0.025f;
+        shadow = true;
     }
 
 public:
     glm::vec4 background;
+
+    std::unordered_map<std::string, unsigned int> FBO; // Frame Buffer Object
+    std::unordered_map<std::string, unsigned int> RBO; // Render Buffer Object
 
     std::unordered_map<std::string, Shader> shader; // 目前场景和shader是绑定的
     std::unordered_map<std::string, unsigned int> textures;
@@ -30,6 +34,7 @@ public:
     float mat_shininess;
     float mat_ambient;
     float mat_heightScale;
+    bool shadow;
 };
 
 Scene gen_playground_scene_p1_simple();
@@ -41,5 +46,7 @@ Scene gen_playground_scene_p3_light_source();
 Scene gen_playground_scene_p4_normal_mapping();
 
 Scene gen_playground_scene_p5_height_mapping();
+
+Scene gen_playground_scene_p6_shadow_mapping();
 
 #endif

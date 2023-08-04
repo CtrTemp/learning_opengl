@@ -16,4 +16,6 @@ void playground_demo_loop_p4_normal_mapping(Scene scene);
 
 void playground_demo_loop_p5_height_mapping(Scene scene);
 
+void playground_demo_loop_p6_shadow_mapping(Scene scene);
+
 #endif

@@ -699,3 +699,172 @@ void playground_demo_loop_p5_height_mapping(Scene scene)
     scene.shader["light_shader"].setVec3("lightColor", light_color[0]);
     renderSphere();
 }
+
+void playground_demo_loop_p6_shadow_mapping(Scene scene)
+{
+    // set clear frame color
+    glClearColor(scene.background.r, scene.background.g, scene.background.b, scene.background.a);
+    glEnable(GL_DEPTH_TEST); // 使能深度测试，这样可以正确绘制遮挡关系
+    // 每轮循环都要清空深度缓存和颜色缓存，从而正确绘制
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // MVP Matrix
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+
+    view = glm::lookAt(primary_cam.cameraPos, primary_cam.cameraPos + primary_cam.cameraFront, primary_cam.cameraUp);
+    projection = glm::perspective(glm::radians(primary_cam.fov), (float)primary_cam.frame_width / (float)primary_cam.frame_height, 0.1f, 100.0f);
+
+    // Object configuration
+    const float attenuation_constant = 1.0f;
+    const float attenuation_linear = 0.09f;
+    const float attenuation_quadratic = 0.0032f;
+    vector<glm::vec3> light_pos{
+        {0.0f, 3.0f, 2.5f}};
+    vector<glm::vec3> light_color{
+        {1.0f, 1.0f, 1.0f}};
+    vector<glm::vec3> light_ambient{
+        {0.05f, 0.05f, 0.05f}};
+
+    vector<glm::vec3> cube_pos{
+        {0.0f, 1.01f, 0.0f}};
+
+
+    /****************************** 绘制深度图 ******************************/
+
+    float near_plane = 1.0f;
+    float far_plane = 25.0f;
+    // 点光源 projection 矩阵
+    glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)1024 / (float)1024, near_plane, far_plane);
+
+    // 点光源 view 矩阵（6个面）
+    std::vector<glm::mat4> shadowTransforms;
+    shadowTransforms.push_back(shadowProj * glm::lookAt(light_pos[0], light_pos[0] + glm::vec3(1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+    shadowTransforms.push_back(shadowProj * glm::lookAt(light_pos[0], light_pos[0] + glm::vec3(-1.0, 0.0, 0.0), glm::vec3(0.0, -1.0, 0.0)));
+    shadowTransforms.push_back(shadowProj * glm::lookAt(light_pos[0], light_pos[0] + glm::vec3(0.0, 1.0, 0.0), glm::vec3(0.0, 0.0, 1.0)));
+    shadowTransforms.push_back(shadowProj * glm::lookAt(light_pos[0], light_pos[0] + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, -1.0)));
+    shadowTransforms.push_back(shadowProj * glm::lookAt(light_pos[0], light_pos[0] + glm::vec3(0.0, 0.0, 1.0), glm::vec3(0.0, -1.0, 0.0)));
+    shadowTransforms.push_back(shadowProj * glm::lookAt(light_pos[0], light_pos[0] + glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0, -1.0, 0.0)));
+
+    // 第一步：还是从光源的角度看过去，以透视投影的方式绘制深度图
+
+    glViewport(0, 0, 1024, 1024);
+    glBindFramebuffer(GL_FRAMEBUFFER, scene.FBO["depth_fbo"]);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    scene.shader["depth_shader"].use();
+    for (unsigned int i = 0; i < 6; ++i)
+    {
+        scene.shader["depth_shader"].setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
+    }
+    scene.shader["depth_shader"].setFloat("far_plane", far_plane);
+    scene.shader["depth_shader"].setVec3("lightPos", light_pos[0]);
+    /**
+     *  使用 depth shader 绘制一遍场景，深度图将被更新到你创建并绑定在 depth fbo 深度附件中的纹理中。
+     * */
+    // renderScene_point_light(scene.shader["depth_shader"]);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, cube_pos[0]);
+    scene.shader["depth_shader"].setMat4("model", model);
+    renderCube();
+
+    model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(5.0f));
+    model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    scene.shader["depth_shader"].setMat4("model", model);
+    renderQuad_Normal();
+
+
+    // 绑定回窗口默认的 FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    // 重置窗口长宽
+    glViewport(0, 0, primary_cam.frame_width, primary_cam.frame_height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
+    /*************************** Object Shader Global Uniform Buffer ***************************/
+    scene.shader["obj_shader"].use();
+    scene.shader["obj_shader"].setMat4("view", view);
+    scene.shader["obj_shader"].setMat4("projection", projection);
+    scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
+    scene.shader["obj_shader"].setFloat("far_plane", far_plane);
+
+    // 全局材质对光源的镜面反射强度
+    scene.shader["obj_shader"].setFloat("material.shininess", scene.mat_shininess);
+
+    // 点光源信息
+    scene.shader["obj_shader"].setVec3("point_light.position", light_pos[0]);
+    scene.shader["obj_shader"].setVec3("point_light.ambient", light_ambient[0] * scene.mat_ambient);
+    scene.shader["obj_shader"].setVec3("point_light.diffuse", light_color[0]);
+    scene.shader["obj_shader"].setVec3("point_light.specular", light_color[0]);
+
+    scene.shader["obj_shader"].setFloat("point_light.constant", attenuation_constant);
+    scene.shader["obj_shader"].setFloat("point_light.linear", attenuation_linear);
+    scene.shader["obj_shader"].setFloat("point_light.quadratic", attenuation_quadratic);
+
+    /**************************************** Render Box ****************************************/
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, cube_pos[0]);
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setFloat("reverseNormal", 1.0f);
+    scene.shader["obj_shader"].setBool("useNormalMap", false);
+    scene.shader["obj_shader"].setBool("useMetallicMap", true);
+
+    scene.shader["obj_shader"].setInt("material.diffuseMap", 0);
+    scene.shader["obj_shader"].setInt("material.specularMap", 1);
+    scene.shader["obj_shader"].setInt("depthMap", 2);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["box_diffuse_tex"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["box_specular_tex"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["depthCubemap"]);
+    renderCube();
+
+    /**************************************** Render Ground ****************************************/
+
+    model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(5.0f));
+    model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setFloat("reverseNormal", 1.0f);
+    scene.shader["obj_shader"].setBool("useNormalMap", true);
+    scene.shader["obj_shader"].setBool("useHeightMap", true);
+    scene.shader["obj_shader"].setBool("useMetallicMap", true);
+    scene.shader["obj_shader"].setFloat("heightScale", scene.mat_heightScale);
+
+    scene.shader["obj_shader"].setInt("material.diffuseMap", 0);
+    scene.shader["obj_shader"].setInt("material.specularMap", 1);
+    scene.shader["obj_shader"].setInt("material.normalMap", 2);
+    scene.shader["obj_shader"].setInt("material.heightMap", 3);
+    scene.shader["obj_shader"].setInt("depthMap", 4);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["plane_diffuse_tex"]);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["plane_specular_tex"]);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["plane_normal_tex"]);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["plane_height_tex"]);
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, scene.textures["depthCubemap"]);
+    renderQuad_Normal();
+
+    /************************************* Render Light Source *************************************/
+    scene.shader["light_shader"].use();
+    scene.shader["light_shader"].setMat4("view", view);
+    scene.shader["light_shader"].setMat4("projection", projection);
+
+    model = glm::mat4(1.0f);
+    model = glm::translate(model, light_pos[0]);
+    model = glm::scale(model, glm::vec3(0.1f));
+    model = glm::rotate(model, (float)glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    scene.shader["light_shader"].setMat4("model", model);
+    scene.shader["light_shader"].setVec3("lightColor", light_color[0]);
+    renderSphere();
+}
+
