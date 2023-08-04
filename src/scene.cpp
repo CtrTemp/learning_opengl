@@ -180,40 +180,47 @@ Scene gen_playground_scene_p5_height_mapping()
     primary_cam.cameraPos = cameraPos;
 
     /*********************************** Load Shader ***********************************/
-    Shader box_shader = Shader(
-        "../shaders/playground/phase04_normal_mapping/box.vert",
-        "../shaders/playground/phase04_normal_mapping/box.frag");
-
-    Shader plane_shader = Shader(
-        "../shaders/playground/phase04_normal_mapping/plane.vert",
-        "../shaders/playground/phase04_normal_mapping/plane.frag");
-
     Shader light_shader = Shader(
         "../shaders/playground/phase04_normal_mapping/light.vert",
         "../shaders/playground/phase04_normal_mapping/light.frag");
 
-    scene.shader.emplace("box_shader", box_shader);
-    scene.shader.emplace("plane_shader", plane_shader);
+    Shader obj_shader = Shader(
+        "../shaders/playground/phase05_height_mapping/obj.vert",
+        "../shaders/playground/phase05_height_mapping/obj.frag");
+
     scene.shader.emplace("light_shader", light_shader);
+    scene.shader.emplace("obj_shader", obj_shader);
 
     /*********************************** Load Texture ***********************************/
-    unsigned int plane_diffuse_tex = load_textures("../textures/PBR/wall/albedo.png", true);
-    unsigned int plane_normal_tex = load_textures("../textures/PBR/wall/normal.png", true);
+    // unsigned int plane_diffuse_tex = load_textures("../textures/PBR/wall/albedo.png", true);
+    // unsigned int plane_normal_tex = load_textures("../textures/PBR/wall/normal.png", true);
+    // unsigned int plane_height_tex = load_textures("../textures/PBR/wall/depth.png", true);
+
+    // unsigned int plane_diffuse_tex = load_textures("../textures/height_mapping/bricks2.jpg", true);
+    // unsigned int plane_normal_tex = load_textures("../textures/height_mapping/bricks2_normal.jpg", true);
+    // unsigned int plane_height_tex = load_textures("../textures/height_mapping/bricks2_disp.jpg", true);
+
+    // unsigned int plane_diffuse_tex = load_textures("../textures/PBR/vines-ue/albedo.png", true);
+    // unsigned int plane_specular_tex = load_textures("../textures/PBR/vines-ue/metallic.png", true);
+    // unsigned int plane_normal_tex = load_textures("../textures/PBR/vines-ue/normal.png", true);
+    // unsigned int plane_height_tex = load_textures("../textures/PBR/vines-ue/depth.png", true);
+
+    unsigned int plane_diffuse_tex = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/albedo.png", true);
+    unsigned int plane_specular_tex = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/metallic.png", true);
+    unsigned int plane_normal_tex = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/normal.png", true);
+    unsigned int plane_height_tex = load_textures("../textures/PBR/sloppy-mortar-bricks-ue/depth.png", true);
+
     unsigned int box_diffuse_tex = load_textures("../textures/box.png", true);
     unsigned int box_specular_tex = load_textures("../textures/mental_frame.png", true);
+
     scene.textures.emplace("plane_diffuse_tex", plane_diffuse_tex);
+    scene.textures.emplace("plane_specular_tex", plane_specular_tex);
     scene.textures.emplace("plane_normal_tex", plane_normal_tex);
+    scene.textures.emplace("plane_height_tex", plane_height_tex);
     scene.textures.emplace("box_diffuse_tex", box_diffuse_tex);
     scene.textures.emplace("box_specular_tex", box_specular_tex);
 
     /******************************** Configure Texture ********************************/
-    scene.shader["box_shader"].use();
-    scene.shader["box_shader"].setInt("material.diffuseMap", 0);
-    scene.shader["box_shader"].setInt("material.specularMap", 1);
-
-    scene.shader["plane_shader"].use();
-    scene.shader["plane_shader"].setInt("material.diffuseMap", 0);
-    scene.shader["plane_shader"].setInt("material.normalMap", 1);
 
     // scene.shader["obj_shader"].setFloat("material.shininess", 0.0f);
 

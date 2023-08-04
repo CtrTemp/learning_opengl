@@ -32,8 +32,9 @@ void render_control(Scene &scene)
     scene.background.g = background_color[1];
     scene.background.b = background_color[2];
 
-    ImGui::SliderFloat("Ambient", &scene.mat_ambient, 0, 10);     // Edit 1 float using a slider from 0.0f to 1.0f
-    ImGui::SliderFloat("Shininess", &scene.mat_shininess, 8, 256); // Edit 1 float using a slider from 0.0f to 1.0f
+    ImGui::SliderFloat("Ambient", &scene.mat_ambient, 0, 10);     
+    ImGui::SliderFloat("Shininess", &scene.mat_shininess, 8, 256); 
+    ImGui::SliderFloat("HeightScale", &scene.mat_heightScale, 0.0f, 0.05f); 
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
     ImGui::End();

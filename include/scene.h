@@ -15,8 +15,9 @@ public:
     Scene()
     {
         background = glm::vec4(0.1f, 0.1f, 0.1f, 1.0f);
-        mat_shininess = 128.0f;
+        mat_shininess = 32.0f;
         mat_ambient = 2.5f;
+        mat_heightScale = 0.025f;
     }
 
 public:
@@ -28,6 +29,7 @@ public:
 
     float mat_shininess;
     float mat_ambient;
+    float mat_heightScale;
 };
 
 Scene gen_playground_scene_p1_simple();

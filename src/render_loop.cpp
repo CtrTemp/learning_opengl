@@ -624,28 +624,36 @@ void playground_demo_loop_p5_height_mapping(Scene scene)
     vector<glm::vec3> cube_pos{
         {0.0f, 1.01f, 0.0f}};
 
+    /*************************** Object Shader Global Uniform Buffer ***************************/
+    scene.shader["obj_shader"].use();
+    scene.shader["obj_shader"].setMat4("view", view);
+    scene.shader["obj_shader"].setMat4("projection", projection);
+    scene.shader["obj_shader"].setVec3("viewPos", primary_cam.cameraPos);
+
+    // 全局材质对光源的镜面反射强度
+    scene.shader["obj_shader"].setFloat("material.shininess", scene.mat_shininess);
+
+    // 点光源信息
+    scene.shader["obj_shader"].setVec3("point_light.position", light_pos[0]);
+    scene.shader["obj_shader"].setVec3("point_light.ambient", light_ambient[0] * scene.mat_ambient);
+    scene.shader["obj_shader"].setVec3("point_light.diffuse", light_color[0]);
+    scene.shader["obj_shader"].setVec3("point_light.specular", light_color[0]);
+
+    scene.shader["obj_shader"].setFloat("point_light.constant", attenuation_constant);
+    scene.shader["obj_shader"].setFloat("point_light.linear", attenuation_linear);
+    scene.shader["obj_shader"].setFloat("point_light.quadratic", attenuation_quadratic);
+
     /**************************************** Render Box ****************************************/
-
-    scene.shader["box_shader"].use();
-    scene.shader["box_shader"].setMat4("view", view);
-    scene.shader["box_shader"].setMat4("projection", projection);
-    scene.shader["box_shader"].setVec3("viewPos", primary_cam.cameraPos);
-
-    scene.shader["box_shader"].setFloat("material.shininess", scene.mat_shininess);
-
-    scene.shader["box_shader"].setVec3("point_light.position", light_pos[0]);
-    scene.shader["box_shader"].setVec3("point_light.ambient", light_ambient[0] * scene.mat_ambient);
-    scene.shader["box_shader"].setVec3("point_light.diffuse", light_color[0]);
-    scene.shader["box_shader"].setVec3("point_light.specular", light_color[0]);
-
-    scene.shader["box_shader"].setFloat("point_light.constant", attenuation_constant);
-    scene.shader["box_shader"].setFloat("point_light.linear", attenuation_linear);
-    scene.shader["box_shader"].setFloat("point_light.quadratic", attenuation_quadratic);
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, cube_pos[0]);
-    scene.shader["box_shader"].setMat4("model", model);
-    scene.shader["box_shader"].setFloat("reverseNormal", 1.0f);
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setFloat("reverseNormal", 1.0f);
+    scene.shader["obj_shader"].setBool("useNormalMap", false);
+    scene.shader["obj_shader"].setBool("useMetallicMap", true);
+
+    scene.shader["obj_shader"].setInt("material.diffuseMap", 0);
+    scene.shader["obj_shader"].setInt("material.specularMap", 1);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["box_diffuse_tex"]);
     glActiveTexture(GL_TEXTURE1);
@@ -654,31 +662,28 @@ void playground_demo_loop_p5_height_mapping(Scene scene)
 
     /**************************************** Render Ground ****************************************/
 
-    scene.shader["plane_shader"].use();
-    scene.shader["plane_shader"].setMat4("view", view);
-    scene.shader["plane_shader"].setMat4("projection", projection);
-    scene.shader["plane_shader"].setVec3("viewPos", primary_cam.cameraPos);
-
-    scene.shader["plane_shader"].setFloat("material.shininess", scene.mat_shininess);
-
-    scene.shader["plane_shader"].setVec3("point_light.position", light_pos[0]);
-    scene.shader["plane_shader"].setVec3("point_light.ambient", light_ambient[0] * scene.mat_ambient);
-    scene.shader["plane_shader"].setVec3("point_light.diffuse", light_color[0]);
-    scene.shader["plane_shader"].setVec3("point_light.specular", light_color[0]);
-
-    scene.shader["plane_shader"].setFloat("point_light.constant", attenuation_constant);
-    scene.shader["plane_shader"].setFloat("point_light.linear", attenuation_linear);
-    scene.shader["plane_shader"].setFloat("point_light.quadratic", attenuation_quadratic);
-
     model = glm::mat4(1.0f);
     model = glm::scale(model, glm::vec3(5.0f));
-    model = glm::rotate(model, (float)glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    scene.shader["plane_shader"].setMat4("model", model);
-    scene.shader["plane_shader"].setFloat("reverseNormal", -1.0f);
+    model = glm::rotate(model, (float)glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    scene.shader["obj_shader"].setMat4("model", model);
+    scene.shader["obj_shader"].setFloat("reverseNormal", 1.0f);
+    scene.shader["obj_shader"].setBool("useNormalMap", true);
+    scene.shader["obj_shader"].setBool("useHeightMap", true);
+    scene.shader["obj_shader"].setBool("useMetallicMap", true);
+    scene.shader["obj_shader"].setFloat("heightScale", scene.mat_heightScale);
+
+    scene.shader["obj_shader"].setInt("material.diffuseMap", 0);
+    scene.shader["obj_shader"].setInt("material.specularMap", 1);
+    scene.shader["obj_shader"].setInt("material.normalMap", 2);
+    scene.shader["obj_shader"].setInt("material.heightMap", 3);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, scene.textures["plane_diffuse_tex"]);
     glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["plane_specular_tex"]);
+    glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, scene.textures["plane_normal_tex"]);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, scene.textures["plane_height_tex"]);
     renderQuad_Normal();
 
     /************************************* Render Light Source *************************************/
@@ -694,4 +699,3 @@ void playground_demo_loop_p5_height_mapping(Scene scene)
     scene.shader["light_shader"].setVec3("lightColor", light_color[0]);
     renderSphere();
 }
-
